@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_squad"
+        android:icon="@drawable/user_groups"
+        android:title="Отряд" />
+
+    <item
+        android:id="@+id/nav_notifications"
+        android:icon="@drawable/notification"
+        android:title="Уведомления" />
+
+    <item
+        android:id="@+id/nav_map"
+        android:icon="@drawable/map"
+        android:title="Карта" />
+
+    <item
+        android:id="@+id/nav_squad_log"
+        android:icon="@drawable/book"
+        android:title="Журнал" />
+
+    <item
+        android:id="@+id/nav_profile"
+        android:icon="@drawable/person"
+        android:title="Профиль" />
+</menu>

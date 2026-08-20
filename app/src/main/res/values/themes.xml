@@ -1,0 +1,11 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.CAMPUS" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorSurface">#FFFFFF</item>        <!-- Белый фон -->
+        <item name="colorOnSurface">#000000</item>      <!-- Черный текст везде -->
+        <item name="colorOnSurfaceVariant">#333333</item> <!-- Темно-серый для подсказок -->
+    </style>
+
+    <style name="Theme.CAMPUS" parent="Base.Theme.CAMPUS" />
+
+</resources>
