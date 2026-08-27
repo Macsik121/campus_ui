@@ -55,6 +55,7 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
     @Override
     public void onBindViewHolder(@NonNull ChildViewHolder holder, int position) {
         Child child = filteredChildren.get(position);
+        Log.d("ChildAdapter", "onBindViewHolder: position " + position + ", child: " + (child != null ? child.getFullName() : "NULL"));
         holder.bind(child);
     }
 
@@ -69,9 +70,20 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
     public void setChildren(List<Child> newChildren) {
         this.children.clear();
         if (newChildren != null) {
-            this.children.addAll(newChildren);
+            int validCount = 0;
+            for (Child child : newChildren) {
+                if (child != null) {
+                    this.children.add(child);
+                    validCount++;
+                } else {
+                    Log.w("ChildAdapter", "setChildren: Skipping null child at index " + newChildren.indexOf(child));
+                }
+            }
+            Log.d("ChildAdapter", "setChildren: Added " + validCount + " valid children out of " + newChildren.size());
+        } else {
+            Log.d("ChildAdapter", "setChildren: newChildren is null");
         }
-        Log.d("ChildAdapter", "setChildren: " + this.children.size() + " items");
+        Log.d("ChildAdapter", "setChildren: Final children list size: " + this.children.size());
         applyFilter(currentQuery);
     }
 
@@ -103,6 +115,7 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
      */
     private void updateListWithDiff(List<Child> newList) {
         Log.i("ChildAdapter", "updateListWithDiff: " + newList.size() + " items");
+        Log.i("ChildAdapter", "updateListWithDiff: oldListSize=" + filteredChildren.size() + ", newListSize=" + newList.size());
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
             @Override
             public int getOldListSize() {
@@ -116,20 +129,23 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
 
             @Override
             public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-                return Objects.equals(filteredChildren.get(oldItemPosition).getId(), 
+                boolean result = Objects.equals(filteredChildren.get(oldItemPosition).getId(),
                                       newList.get(newItemPosition).getId());
+                return result;
             }
 
             @Override
             public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
                 Child oldItem = filteredChildren.get(oldItemPosition);
                 Child newItem = newList.get(newItemPosition);
-                return Objects.equals(oldItem.getFullName(), newItem.getFullName()) &&
-                       Objects.equals(oldItem.getAge(), newItem.getAge()) &&
-                       Objects.equals(oldItem.getNotes(), newItem.getNotes()) &&
-                       Objects.equals(oldItem.getParentFullName(), newItem.getParentFullName()) &&
-                       Objects.equals(oldItem.getParentPhone(), newItem.getParentPhone()) &&
-                       areTagsEqual(oldItem.getTags(), newItem.getTags());
+                boolean nameEq = Objects.equals(oldItem.getFullName(), newItem.getFullName());
+                boolean ageEq = Objects.equals(oldItem.getAge(), newItem.getAge());
+                boolean notesEq = Objects.equals(oldItem.getNotes(), newItem.getNotes());
+                boolean parentNameEq = Objects.equals(oldItem.getParentFullName(), newItem.getParentFullName());
+                boolean parentPhoneEq = Objects.equals(oldItem.getParentPhone(), newItem.getParentPhone());
+                boolean tagsEq = areTagsEqual(oldItem.getTags(), newItem.getTags());
+                boolean result = nameEq && ageEq && notesEq && parentNameEq && parentPhoneEq && tagsEq;
+                return result;
             }
         });
 
@@ -199,6 +215,8 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
             ivCopyParentName = itemView.findViewById(R.id.iv_copy_parent_name);
             ivCopyParentPhone = itemView.findViewById(R.id.iv_copy_parent_phone);
             ivEditNotes = itemView.findViewById(R.id.iv_edit_notes);
+
+            Log.d("ChildAdapter", "ChildViewHolder: itemView height: " + itemView.getMeasuredHeight() + ", width: " + itemView.getMeasuredWidth());
         }
 
         void bind(Child child) {

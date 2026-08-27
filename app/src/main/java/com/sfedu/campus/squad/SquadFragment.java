@@ -45,6 +45,7 @@ public class SquadFragment extends Fragment implements ChildAdapter.OnChildActio
     private RecyclerView rvChildren;
     private ProgressBar progressBar;
     private View viewOverlay;
+    private View cvHeader;
 
     // Data
     private PreferencesHelper preferencesHelper;
@@ -97,13 +98,15 @@ public class SquadFragment extends Fragment implements ChildAdapter.OnChildActio
         rvChildren = view.findViewById(R.id.rv_children);
         progressBar = view.findViewById(R.id.progress_bar);
         viewOverlay = view.findViewById(R.id.view_overlay);
+        cvHeader = view.findViewById(R.id.cv_header);
     }
 
     private void setupRecyclerView() {
         childAdapter = new ChildAdapter(requireContext(), this);
         rvChildren.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvChildren.setAdapter(childAdapter);
-        rvChildren.setHasFixedSize(true); // Optimization
+        // Removed setHasFixedSize(true) as it was preventing proper height calculation
+        Log.d(TAG, "setupRecyclerView: Adapter set, initial item count: " + childAdapter.getItemCount());
     }
 
     private void setupSearchListener() {
@@ -176,16 +179,20 @@ public class SquadFragment extends Fragment implements ChildAdapter.OnChildActio
     private void loadChildrenFromCache() {
         allChildren = preferencesHelper.getChildrenList();
         String cachedSquadTitle = preferencesHelper.getSquadTitle();
-        
+
         requireActivity().runOnUiThread(() -> {
             if (cachedSquadTitle != null) {
                 tvSquadTitle.setText("Мой отряд: " + cachedSquadTitle);
             }
             if (allChildren != null && !allChildren.isEmpty()) {
                 Log.d(TAG, "loadChildrenFromCache: Rendering " + allChildren.size() + " items");
+                Log.d(TAG, "loadChildrenFromCache: Setting adapter with " + allChildren.size() + " items");
                 childAdapter.setChildren(allChildren);
+                Log.d(TAG, "loadChildrenFromCache: Adapter item count after setChildren: " + childAdapter.getItemCount());
                 updateChildrenCount();
                 showChildrenList();
+            } else {
+                Log.d(TAG, "loadChildrenFromCache: allChildren is null or empty");
             }
         });
     }
@@ -204,11 +211,14 @@ public class SquadFragment extends Fragment implements ChildAdapter.OnChildActio
                     setLoading(false);
                     if (children != null && !children.isEmpty()) {
                         Log.d(TAG, "fetchChildrenFromApi: Received " + children.size() + " children");
+                        Log.d(TAG, "fetchChildrenFromApi: First child non-null: " + (children.get(0) != null));
                         allChildren = children;
                         preferencesHelper.saveChildrenList(allChildren);
 
                         // CRITICAL: Update adapter then visibility
+                        Log.d(TAG, "fetchChildrenFromApi: About to call setChildren with " + children.size() + " items");
                         childAdapter.setChildren(allChildren);
+                        Log.d(TAG, "fetchChildrenFromApi: Adapter item count after setChildren: " + childAdapter.getItemCount());
                         updateChildrenCount();
                         showChildrenList();
 
@@ -263,10 +273,20 @@ public class SquadFragment extends Fragment implements ChildAdapter.OnChildActio
     }
 
     private void showChildrenList() {
+        Log.d(TAG, "showChildrenList: Making RecyclerView VISIBLE, adapter count: " + childAdapter.getItemCount());
+        Log.d(TAG, "showChildrenList: cv_header height: " + cvHeader.getHeight() + ", width: " + cvHeader.getWidth());
+        Log.d(TAG, "showChildrenList: parent height: " + requireView().getHeight() + ", width: " + requireView().getWidth());
         tvNoSquad.setVisibility(View.GONE);
         tvNoChildren.setVisibility(View.GONE);
         rvChildren.setVisibility(View.VISIBLE);
         tilSearch.setVisibility(View.VISIBLE);
+
+        // Force layout
+        rvChildren.post(() -> {
+            rvChildren.requestLayout();
+            Log.d(TAG, "showChildrenList: Forced layout, height: " + rvChildren.getHeight() + ", width: " + rvChildren.getWidth());
+            Log.d(TAG, "showChildrenList: After requestLayout - cv_header height: " + cvHeader.getHeight() + ", parent height: " + requireView().getHeight());
+        });
     }
 
     private void fetchSquadTitle() {
