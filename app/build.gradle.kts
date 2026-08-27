@@ -79,6 +79,9 @@ dependencies {
     implementation("javax.ws.rs:javax.ws.rs-api:2.1.1")
     implementation("javax.annotation:javax.annotation-api:1.3.2")
     implementation("com.google.code.gson:gson:2.10.1")
+
+    // CircleImageView for circular avatar
+    implementation("de.hdodenhof:circleimageview:3.1.0")
 }
 
 tasks.named("preBuild") {

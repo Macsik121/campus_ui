@@ -2,4 +2,17 @@
     <string name="app_name">CAMPUS</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <!-- Notifications -->
+    <string name="notification_type_icon">Notification type icon</string>
+    <string name="unread_count_format">Непрочитано: %d</string>
+    <string name="read_all_button">Прочитать всё</string>
+    <string name="read_button">Прочитано</string>
+    <string name="notification_type_map">Перемещение по карте</string>
+    <string name="notification_type_info">Информационное объявление</string>
+    <string name="notification_type_important">Важное объявление</string>
+    <string name="notification_read_success">Уведомление отмечено как прочитанное</string>
+    <string name="notification_read_all_success">Все уведомления отмечены как прочитанные</string>
+    <string name="notification_error">Ошибка при обновлении уведомлений</string>
+    <string name="loading_notifications">Загрузка уведомлений…</string>
 </resources>
