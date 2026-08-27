@@ -1,0 +1,1110 @@
+swagger: "2.0"
+info:
+  version: "1.0.0"
+  title: "Лагерь-Вожатый API"
+  description: "API для управления педагогическими отрядами, детьми, мероприятиями и уведомлениями"
+host: "localhost:3000"
+basePath: "/api/v1"
+schemes:
+  - "http"
+consumes:
+  - "application/json"
+produces:
+  - "application/json"
+tags:
+  - name: "auth"
+    description: "Авторизация и регистрация пользователей"
+  - name: "squads"
+    description: "Управление отрядами и назначение вожатых"
+  - name: "notifications"
+    description: "Уведомления системы"
+  - name: "journal"
+    description: "Мероприятия и посещаемость"
+  - name: "profile"
+    description: "Профиль пользователя"
+  - name: "tags"
+    description: "Теги детей (только для старшего вожатого)"
+paths:
+  /auth/login:
+    post:
+      tags:
+        - "auth"
+      summary: "Вход пользователя в систему"
+      operationId: "loginUser"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Данные для входа"
+          required: true
+          schema:
+            $ref: "#/definitions/LoginRequest"
+      responses:
+        "200":
+          description: "Успешный вход, возвращается JWT токен и данные пользователя"
+          schema:
+            $ref: "#/definitions/AuthResponse"
+        "400":
+          description: "Ошибка валидации (например, пустые поля)"
+        "401":
+          description: "Неправильный логин или пароль"
+  /auth/register:
+    post:
+      tags:
+        - "auth"
+      summary: "Регистрация нового пользователя"
+      operationId: "registerUser"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Данные для регистрации"
+          required: true
+          schema:
+            $ref: "#/definitions/RegisterRequest"
+      responses:
+        "200":
+          description: "Успешная регистрация, возвращается токен и ID пользователя"
+          schema:
+            $ref: "#/definitions/AuthResponse"
+        "400":
+          description: "Пользователь с данной почтой уже существует"
+  /auth/verify-jwt:
+    get:
+      tags:
+        - "auth"
+      summary: "Проверка валидности JWT токена"
+      description: "Возвращает 200, если токен действителен, иначе 401"
+      operationId: "verifyJwt"
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          description: "Bearer токен (например, 'Bearer eyJhbGciOiJIUzI1NiIs...')"
+          required: true
+          type: "string"
+          format: "Bearer <token>"
+      responses:
+        "200":
+          description: "Токен валиден"
+        "401":
+          description: "Токен недействителен или отсутствует"
+  /auth/verify-senior-counselour-rights:
+    get:
+      tags:
+        - "auth"
+      summary: "Проверка прав пользователя на права Старшего вожатого или выше"
+      description: "Возвращает 200, если пользователь старший вожатый или директор"
+      operationId: "verifySeniorCounselourRights"
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          description: "Bearer токен"
+          required: true
+          type: "string"
+          format: "Bearer <token>"
+      responses:
+        "200":
+          description: "Прав достаточно"
+        "403":
+          description: "Прав не достаточно. Человек обычный вожатый."
+  /auth/verify-director-rights:
+    get:
+      tags:
+        - "auth"
+      summary: "Проверка прав пользователя на права Директора"
+      description: "Возвращает 200, если пользователь директор"
+      operationId: "verifyDirectorRights"
+      parameters:
+        - name: "Authorization"
+          in: "header"
+          description: "Bearer токен"
+          required: true
+          type: "string"
+          format: "Bearer <token>"
+      responses:
+        "200":
+          description: "Прав достаточно"
+        "403":
+          description: "Прав не достаточно. Человек обычный или старший вожатый."
+  /squads:
+    post:
+      tags:
+        - "squads"
+      summary: "Создание нового отряда"
+      description: "Создаёт отряд в начале смены. Доступно только вожатым с правом создания (старший вожатый или директор)"
+      operationId: "createSquad"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Данные для создания нескольких отрядов. Если нужно создать всего один, передаём в запросе информацию об 1-ом создаваемом отряде."
+          required: true
+          schema:
+            $ref: "#/definitions/CreateSeveralSquadsRequest"
+      responses:
+        "200":
+          description: "Отряд успешно создан"
+          schema:
+            $ref: "#/definitions/CreateSquadResponse"
+        "401":
+          description: "Невалидный токен"
+        "403":
+          description: "Данный пользователь не может создавать отряды"
+  /squads/reassign-user:
+    post:
+      tags:
+        - "squads"
+      summary: "Назначение вожатого в отряд"
+      description: "Переназначает вожатого из одного отряда в другой"
+      operationId: "reassignUserToSquad"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "ID отряда и ID вожатого"
+          required: true
+          schema:
+            $ref: "#/definitions/AssignUserRequest"
+      responses:
+        "200":
+          description: "Назначение выполнено успешно"
+          schema:
+            $ref: "#/definitions/AssignUserResponse"
+        "401":
+          description: "Пользователь не авторизован"
+        "403":
+          description: "Недостаточно прав"
+        "404":
+          description: "Пользователь или отряд с переданным ID не найден"
+        "500":
+          description: "Внутренняя ошибка сервера"
+  /squads/{squadId}/children:
+    get:
+      tags:
+        - "squads"
+      summary: "Получить список детей в отряде"
+      description: "Возвращает массив объектов Child с ФИО, тегами и телефоном родителей"
+      operationId: "getChildrenBySquad"
+      parameters:
+        - name: "squadId"
+          in: "path"
+          description: "UUID отряда"
+          required: true
+          type: "string"
+          format: "uuid"
+      responses:
+        "200":
+          description: "Список детей получен"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Child"
+        "401":
+          description: "Неавторизованный доступ"
+        "403":
+          description: "Нет назначения на данный отряд у вожатого, пытающегося получить список другого отряда."
+        "404":
+          description: "Отряда с ID squadId не найден"
+  /children:
+    post:
+      tags:
+        - "squads"
+      summary: "Создать ребёнка"
+      description: "Создаёт сущность Ребёнок"
+      operationId: "createChild"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Новые данные ребёнка"
+          required: true
+          schema:
+            $ref: "#/definitions/Child"
+      responses:
+        "200":
+          description: "Ребёнок создан"
+          schema:
+            $ref: "#/definitions/Child"
+        "400":
+          description: "Ошибка валидации: Id не должен быть указан при создании, или одно из полей пустое"
+        "401":
+          description: "Неавторизованный доступ"
+        "403":
+          description: "Создавать ребёнка может только старший вожатый и директор"
+    put:
+      tags:
+        - "squads"
+      summary: "Обновить данные ребёнка"
+      description: "Обновляет информацию (аллергии, заметки) о ребёнке"
+      operationId: "updateChild"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Новые данные ребёнка"
+          required: true
+          schema:
+            $ref: "#/definitions/Child"
+      responses:
+        "200":
+          description: "Данные обновлены"
+          schema:
+            $ref: "#/definitions/Child"
+        "400":
+          description: "Некорректные данные"
+        "401":
+          description: "Неавторизованный доступ"
+        "403":
+          description: "Вожатый не назначен на отряд и не старший вожатый. Если надо, попросите внести изменения старшего вожатого."
+        "404":
+          description: "Ребёнок не найден"
+  /children/{childId}:
+    delete:
+      tags:
+        - "squads"
+      summary: "Удалить ребёнка из отряда"
+      description: "Удаление записи о ребёнке (например, при ошибке добавления)"
+      operationId: "deleteChild"
+      parameters:
+        - name: "childId"
+          in: "path"
+          description: "UUID ребёнка"
+          required: true
+          type: "string"
+          format: "uuid"
+      responses:
+        "204":
+          description: "Ребёнок успешно удалён"
+        "401":
+          description: "Неавторизованный доступ"
+        "403":
+          description: "Удалять ребёнка из отряда может только старший вожатый"
+        "404":
+          description: "Ребёнок не найден"
+  /children/detached:
+    get:
+      tags:
+        - "squads"
+      summary: "Получить список детей, не привязанных ни к одному отряду"
+      description: "Возвращает массив объектов всех Child, которых надо назначить на отряд"
+      operationId: "getDetachedChildren"
+      responses:
+        "200":
+          description: "Список детей получен"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Child"
+        "401":
+          description: "Неавторизованный доступ"
+        "403":
+          description: "Нужны права старшего вожатого или директора"
+  /children/change-child-to-squad:
+    post:
+      tags:
+        - "squads"
+      summary: "Привязать/отвязать ребёнка к отряду."
+      description: "В запросе передаём флаг attach, определяющий отвязку или привязку."
+      operationId: "changeChildForSquad"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Id ребёнка, Id отряда, флаг attach"
+          required: true
+          schema:
+            $ref: "#/definitions/ChangeChildForSquadRequest"
+      responses:
+        "200":
+          description: "Ребёнок привязан или отвязан"
+          schema:
+            $ref: "#/definitions/ChangeChildForSquadResponse"
+        "401":
+          description: "Неавторизованный доступ"
+        "403":
+          description: "Привязывать ребёнка к отряду может только старший вожатый и директор"
+        "404":
+          description: "Ребёнок или отряд с таким Id не найден"
+  /children/{childId}/tags:
+    get:
+      tags:
+        - "squads"
+      summary: "Получить теги ребёнка в отряде"
+      description: "Возвращает массив объектов childTags"
+      operationId: "getChildTags"
+      parameters:
+        - name: "childId"
+          in: "path"
+          description: "UUID ребёнка"
+          required: true
+          type: "string"
+          format: "uuid"
+      responses:
+        "200":
+          description: "Список тегов получен"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/ChildTag"
+        "401":
+          description: "Неавторизованный доступ"
+        "403":
+          description: "Вожатый не назначен на отряд и не старший вожатый"
+        "404":
+          description: "У ребёнка не найдены теги"
+  /children/tags:
+    post:
+      tags:
+        - "tags"
+      summary: "Создать тег для ребёнка"
+      description: "Добавляет новый тег для ребёнка. Доступно только старшим вожатым и директору."
+      operationId: "createChildTag"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Данные тега"
+          required: true
+          schema:
+            $ref: "#/definitions/CreateTagRequest"
+      responses:
+        "201":
+          description: "Тег успешно создан"
+          schema:
+            $ref: "#/definitions/Tag"
+        "400":
+          description: "Ошибка валидации. Пустые поля или некорректный tagType"
+        "401":
+          description: "Неавторизованный доступ"
+        "403":
+          description: "Нет назначения у вожатого, пытающегося создать тег. Только старший вожатый или назначенный обычный."
+        "404":
+          description: "Ребёнок с указанным childId не найден"
+    put:
+      tags:
+        - "tags"
+      summary: "Обновить тег ребёнка"
+      description: "Изменяет содержимое существующего тега. Доступно только старшим вожатым и директору."
+      operationId: "updateChildTag"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Данные для обновления тега"
+          required: true
+          schema:
+            $ref: "#/definitions/TagRequest"
+      responses:
+        "200":
+          description: "Тег успешно обновлён"
+          schema:
+            $ref: "#/definitions/Tag"
+        "400":
+          description: "Ошибка валидации. Пустые поля или некорректный tagType"
+        "401":
+          description: "Неавторизованный доступ"
+        "403":
+          description: "Нет назначения у вожатого, пытающегося изменить тег. Только старший вожатый или назначенный обычный."
+        "404":
+          description: "Тег с указанным id не найден"
+    delete:
+      tags:
+        - "tags"
+      summary: "Удалить тег ребёнка"
+      description: "Удаляет тег по его id. Доступно только старшим вожатым и директору."
+      operationId: "deleteChildTag"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "ID ребёнка и его тег для удаления"
+          required: true
+          schema:
+            $ref: "#/definitions/TagRequest"
+      responses:
+        "204":
+          description: "Тег успешно удалён"
+        "401":
+          description: "Неавторизованный доступ"
+        "403":
+          description: "Нет назначения у вожатого, пытающегося удалить тег. Только старший вожатый или назначенный обычный."
+        "404":
+          description: "Тег с указанным id не найден"
+  /notifications:
+    post:
+      tags:
+        - "notifications"
+      summary: "Создать новое уведомление"
+      description: "Уведомление создаётся автоматически при определённых событиях в системе"
+      operationId: "createNotification"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Данные уведомления"
+          required: true
+          schema:
+            $ref: "#/definitions/Notification"
+      responses:
+        "201":
+          description: "Уведомление создано"
+          schema:
+            $ref: "#/definitions/Notification"
+        "400":
+          description: "Ошибка валидации. Пустые поля: A, B, C"
+        "401":
+          description: "Неавторизованный доступ"
+        "403":
+          description: "Только старший вожатый может создавать уведомления"
+    get:
+      tags:
+        - "notifications"
+      summary: "Получить список уведомлений"
+      description: "Возвращает последние уведомления для текущего пользователя"
+      operationId: "getNotifications"
+      parameters:
+        - name: "limit"
+          in: "query"
+          description: "Максимальное количество уведомлений"
+          required: false
+          type: "integer"
+          default: 20
+      responses:
+        "200":
+          description: "Список уведомлений"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Notification"
+        "401":
+          description: "Неавторизованный доступ"
+    put:
+      tags:
+        - "notifications"
+      summary: "Обновить содержимое уведомления"
+      description: "Изменяет содержимое уведомления по его id и помечает его как непрочитанное для всех пользователей."
+      operationId: "updateNotification"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Данные для обновления. Поле id обязательно."
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateNotificationRequest"
+      responses:
+        "200":
+          description: "Уведомление обновлено"
+          schema:
+            $ref: "#/definitions/Notification"
+        "400":
+          description: "Ошибка валидации. Пустые поля или нет id"
+        "401":
+          description: "Неавторизованный доступ"
+        "403":
+          description: "Вносить изменения в текст уведомлений может только старший вожатый"
+        "404":
+          description: "Уведомление с указанным id не найдено"
+    delete:
+      tags:
+        - "notifications"
+      summary: "Удалить уведомление"
+      description: "Удаляет уведомление по его id."
+      operationId: "deleteNotification"
+      parameters:
+        - name: "notificationId"
+          in: "query"
+          description: "UUID уведомления для удаления"
+          required: true
+          type: "string"
+          format: "uuid"
+      responses:
+        "204":
+          description: "Уведомление успешно удалено"
+        "401":
+          description: "Неавторизованный доступ"
+        "404":
+          description: "Уведомление с указанным id не найдено"
+  /notifications/read:
+    post:
+      tags:
+        - "notifications"
+      summary: "Прочитать уведомление"
+      description: "Пометить определённое уведомление как прочитанное"
+      operationId: "readNotification"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Данные уведомления"
+          required: true
+          schema:
+            $ref: "#/definitions/ReadNotificationRequest"
+      responses:
+        "201":
+          description: "Уведомление прочитано"
+          schema:
+            $ref: "#/definitions/ReadNotificationResponse"
+        "401":
+          description: "Неавторизованный доступ"
+        "404":
+          description: "Нет такого уведомления"
+  /notifications/read-all:
+    post:
+      tags:
+        - "notifications"
+      summary: "Прочитать все уведомления"
+      description: "Помечает все уведомления пользователя как прочитанные."
+      operationId: "readAllNotifications"
+      responses:
+        "200":
+          description: "Все уведомления прочитаны"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+                example: "All notifications marked as read"
+        "401":
+          description: "Неавторизованный доступ"
+  /events:
+    post:
+      tags:
+        - "journal"
+      summary: "Создать новое мероприятие"
+      description: "Доступно только старшим вожатым и директору"
+      operationId: "createEvent"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Данные мероприятия"
+          required: true
+          schema:
+            $ref: "#/definitions/CreateEventRequest"
+      responses:
+        "201":
+          description: "Мероприятие создано"
+          schema:
+            $ref: "#/definitions/Event"
+        "400":
+          description: "Ошибка валидации. Не заполнены поля: A, B, C"
+        "401":
+          description: "Неавторизованный доступ"
+        "403":
+          description: "Недостаточно прав"
+    get:
+      tags:
+        - "journal"
+      summary: "Получить список мероприятий"
+      description: "Может быть отфильтрован по дате"
+      operationId: "getEvents"
+      parameters:
+        - name: "date"
+          in: "query"
+          description: "Фильтр по дате (ISO 8601)"
+          required: false
+          type: "string"
+          format: "date"
+        - name: "limit"
+          in: "query"
+          description: "Ограничение на количество возвращаемых мероприятий"
+          required: false
+          type: "integer"
+      responses:
+        "200":
+          description: "Список мероприятий"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Event"
+        "401":
+          description: "Неавторизованный доступ"
+    put:
+      tags:
+        - "journal"
+      summary: "Обновить мероприятие"
+      description: "Изменение времени, описания, типа и т.д."
+      operationId: "updateEvent"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Новые данные для события. В запросе указывается такое id события, к которому будут применены изменения."
+          required: true
+          schema:
+            $ref: "#/definitions/Event"
+      responses:
+        "200":
+          description: "Мероприятие обновлено"
+          schema:
+            $ref: "#/definitions/Event"
+        "400":
+          description: "Ошибка валидации. Не заполнены поля: A, B, C"
+        "401":
+          description: "Неавторизованный доступ"
+        "403":
+          description: "Недостаточно прав. Изменять данные о мероприятии может только старший вожатый."
+        "404":
+          description: "Мероприятие не найдено"
+  /events/{eventId}:
+    delete:
+      tags:
+        - "journal"
+      summary: "Удалить мероприятие"
+      description: "Удаление мероприятия (если оно отменяется)"
+      operationId: "deleteEvent"
+      parameters:
+        - name: "eventId"
+          in: "path"
+          description: "UUID мероприятия"
+          required: true
+          type: "string"
+          format: "uuid"
+      responses:
+        "204":
+          description: "Мероприятие удалено"
+        "400":
+          description: "Некорректный идентификатор"
+        "401":
+          description: "Неавторизованный доступ"
+        "404":
+          description: "Мероприятие не найдено"
+  /events/{eventId}/attendance/{squadId}:
+    get:
+      tags:
+        - "journal"
+      summary: "Получить список детей, отмеченных на данном мероприятии"
+      operationId: "getEventAttendance"
+      parameters:
+        - name: "eventId"
+          in: "path"
+          description: "Id мероприятия, по которому нужно получить посещаемость"
+          required: true
+          type: "string"
+          format: "uuid"
+        - name: "squadId"
+          in: "path"
+          description: "Id отряда, по которому нужно получить посещаемость"
+          required: true
+          type: "string"
+          format: "uuid"
+      responses:
+        "200":
+          description: "Список детей на мероприятии"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/GetAttendanceResponse"
+        "401":
+          description: "Неавторизованный доступ"
+        "403":
+          description: "Отмечать детей может только назначенный на отряд вожатый или старший."
+  /events/{eventId}/attendance:
+    post:
+      tags:
+        - "journal"
+      summary: "Отметить посещаемость"
+      description: "Удаляет/записывает ребёнка для указанного мероприятия в event_attendance"
+      operationId: "updateAttendance"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Данные о посещаемости"
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateAttendanceRequest"
+        - name: "eventId"
+          in: "path"
+          description: "ID события, на котором нужно отметить"
+          required: true
+          type: "string"
+          format: "uuid"
+      responses:
+        "200":
+          description: "Посещаемость обновлена"
+          schema:
+            $ref: "#/definitions/UpdateAttendanceResponse"
+        "400":
+          description: "Ребёнок на данном мероприятии уже отмечен или не был отмечен"
+        "401":
+          description: "Неавторизованный доступ"
+        "403":
+          description: "Отмечать детей может только назначенный на отряд вожатый или старший."
+        "404":
+          description: "Ребёнок или мероприятие не найдены"
+  /users/profile:
+    get:
+      tags:
+        - "profile"
+      summary: "Получить данные текущего пользователя"
+      description: "Возвращает имя, роль, почту, аватар и другую информацию. Id берётся из token"
+      operationId: "getUserProfile"
+      responses:
+        "200":
+          description: "Профиль пользователя"
+          schema:
+            $ref: "#/definitions/UserProfile"
+        "401":
+          description: "Неавторизованный доступ"
+    put:
+      tags:
+        - "profile"
+      summary: "Обновить данные пользователя"
+      description: "Обновляет имя, аватар, пароль и т.п."
+      operationId: "updateUserProfile"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Данные пользователя на обновление. В UserProfile запроса id пользователя - это тот пользователь, поля которого будут изменяться в БД"
+          required: true
+          schema:
+            $ref: "#/definitions/UserProfile"
+      responses:
+        "200":
+          description: "Профиль обновлён"
+          schema:
+            $ref: "#/definitions/UserProfile"
+        "401":
+          description: "Неавторизованный доступ"
+        "404":
+          description: "Пользователь не найден"
+securityDefinitions:
+  bearerAuth:
+    type: "apiKey"
+    name: "Authorization"
+    in: "header"
+    description: "Введите токен в формате: Bearer <token>"
+definitions:
+  LoginRequest:
+    type: "object"
+    required:
+      - email
+      - password
+    properties:
+      email:
+        type: "string"
+        format: "email"
+        example: "john@316.com"
+      password:
+        type: "string"
+        example: "__my_very_strong_password.ru__-_-"
+  AuthResponse:
+    type: "object"
+    properties:
+      token:
+        type: "string"
+        example: "eyJhbGciOiJIUzI1NiIs..."
+  RegisterRequest:
+    type: "object"
+    required:
+      - name
+      - email
+      - password
+    properties:
+      name:
+        type: "string"
+        example: "Jesus"
+      email:
+        type: "string"
+        format: "email"
+        example: "salii@sfedu.ru"
+      password:
+        type: "string"
+        example: "__my_very_strong_password.ru__-_-"
+  SquadInfo:
+    type: "object"
+    required:
+      - title
+      - description
+    properties:
+      title:
+        type: "string"
+        example: "Капельки"
+      description:
+        type: "string"
+        example: "Плывём спокойно по течению..."
+  CreateSeveralSquadsRequest:
+    type: "object"
+    properties:
+      squadsData:
+        type: "array"
+        items:
+          $ref: "#/definitions/SquadInfo"
+  CreateSquadResponse:
+    type: "object"
+    properties:
+      squadIds:
+        type: "array"
+        items:
+          type: "string"
+          format: "uuid"
+      userId:
+        type: "string"
+        format: "uuid"
+        example: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx"
+      date:
+        type: "string"
+        format: "date-time"
+        example: "2026-08-16T12:00:00Z"
+  AssignUserRequest:
+    type: "object"
+    required:
+      - squadId
+      - userId
+    properties:
+      squadId:
+        type: "string"
+        format: "uuid"
+        example: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      userId:
+        type: "string"
+        format: "uuid"
+        example: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  AssignUserResponse:
+    type: "object"
+    properties:
+      squadId:
+        type: "string"
+        format: "uuid"
+        example: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      userId:
+        type: "string"
+        format: "uuid"
+        example: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      oldSquadId:
+        type: "string"
+        format: "uuid"
+      date:
+        type: "string"
+        format: "date-time"
+        example: "2026-08-16T12:00:00Z"
+  Child:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+        format: "uuid"
+        example: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx"
+      fullName:
+        type: "string"
+        example: "Иванов Иван Иванович"
+      age:
+        type: "string"
+        example: "12"
+      parentFullName:
+        type: "string"
+        example: "Иванова Анна Петровна"
+      parentPhone:
+        type: "string"
+        example: "89991234567"
+      notes:
+        type: "string"
+        example: "Любит футбол"
+      tags:
+        type: "array"
+        items:
+          $ref: "#/definitions/ChildTag"
+  ChildTag:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+        format: "uuid"
+      type:
+        type: "string"
+        enum:
+          - warning
+          - alert
+          - health
+          - sports
+        example: "health"
+      info:
+        type: "string"
+        example: "Аллергия на арахис"
+  ChangeChildForSquadRequest:
+    type: "object"
+    properties:
+      childId:
+        type: "string"
+        format: "uuid"
+      squadId:
+        type: "string"
+        format: "uuid"
+      attach:
+        type: "boolean"
+  ChangeChildForSquadResponse:
+    type: "object"
+    properties:
+      childId:
+        type: "string"
+        format: "uuid"
+      userId:
+        type: "string"
+        format: "uuid"
+      info:
+        type: "string"
+        enum: ["attached", "detached"]
+  CreateTagRequest:
+    type: "object"
+    required:
+      - childId
+      - tagType
+      - tagInfo
+    properties:
+      childId:
+        type: "string"
+        format: "uuid"
+      tagType:
+        type: "string"
+        enum:
+          - warning
+          - alert
+          - health
+          - sports
+      tagInfo:
+        type: "string"
+  TagRequest:
+    type: "object"
+    properties:
+      childId:
+        type: "string"
+        format: "uuid"
+      tag:
+        $ref: "#/definitions/ChildTag"
+  Tag:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+        format: "uuid"
+      childId:
+        type: "string"
+        format: "uuid"
+      tagType:
+        type: "string"
+        enum:
+          - warning
+          - alert
+          - health
+          - sports
+      tagInfo:
+        type: "string"
+  Notification:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+        format: "uuid"
+      title:
+        type: "string"
+        example: "Новое мероприятие"
+      description:
+        type: "string"
+        example: "Сегодня в 18:00 состоится концерт"
+      sentAt:
+        type: "string"
+        format: "date-time"
+      isRead:
+        type: "boolean"
+        default: false
+  ReadNotificationRequest:
+    type: "object"
+    properties:
+      notifId:
+        type: "string"
+        format: "uuid"
+  ReadNotificationResponse:
+    type: "object"
+    properties:
+      notifId:
+        type: "string"
+        format: "uuid"
+      message:
+        type: "string"
+        default: "Read successfully"
+  UpdateNotificationRequest:
+    type: "object"
+    required:
+      - id
+    properties:
+      id:
+        type: "string"
+        format: "uuid"
+      title:
+        type: "string"
+      description:
+        type: "string"
+  CreateEventRequest:
+    type: "object"
+    required:
+      - title
+      - timeFrom
+      - timeTo
+    properties:
+      title:
+        type: "string"
+        example: "Утренняя линейка"
+      description:
+        type: "string"
+        example: "Построение на площади"
+      timeFrom:
+        type: "string"
+        format: "date-time"
+        example: "2026-08-17T08:00:00Z"
+      timeTo:
+        type: "string"
+        format: "date-time"
+        example: "2026-08-17T08:30:00Z"
+  Event:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+        format: "uuid"
+      title:
+        type: "string"
+      description:
+        type: "string"
+      timeFrom:
+        type: "string"
+        format: "date-time"
+      timeTo:
+        type: "string"
+        format: "date-time"
+  GetAttendanceResponse:
+    type: "object"
+    properties:
+      childIds:
+        type: "array"
+        items:
+          type: "string"
+          format: "uuid"
+  UpdateAttendanceRequest:
+    type: "object"
+    required:
+      - childId
+      - present
+    properties:
+      childId:
+        type: "string"
+        format: "uuid"
+      present:
+        type: "boolean"
+        example: true
+  UpdateAttendanceResponse:
+    type: "object"
+    properties:
+      message:
+        type: "string"
+  UserProfile:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+        format: "uuid"
+      fullName:
+        type: "string"
+        example: "Иванов Иван"
+      email:
+        type: "string"
+        format: "email"
+        example: "john@316.com"
+      role:
+        type: "string"
+        enum:
+          - counselour
+          - senior_counselour
+          - director
+        example: "counselour"
+      avatar:
+        type: "string"
+        example: "https://example.com/avatar.jpg"
+      phoneNumber:
+        type: "string"
+        example: "89991234567"

@@ -9,6 +9,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
@@ -28,27 +29,9 @@ import java.util.Map;
 
 import okhttp3.*;
 
-// before making a request, create a body for that
-//JSONObject json = new JSONObject();
-//                try {
-//                        json.put("email", email.getText().toString());
-//        json.put("password", pass.getText().toString());
-//        } catch (JSONException e) {
-//        throw new RuntimeException(e);
-//                }
-//
-//RequestBody body = RequestBody.create(
-//        json.toString(),
-//        MediaType.parse("application/json; charset=utf-8")
-//);
-//
-//Request request = new Request.Builder()
-//        .url("http://192.168.1.4:3000/api/auth/login")
-//        .post(body)
-//        .build();
-
 public class ApiClient {
-    private static final String BASE_URL = "http://192.168.1.4:3000/api/";
+    // For Android Emulator, 10.0.2.2 points to the host machine's localhost
+    private static final String BASE_URL = "http://localhost:3000/api/v1/";
     private static OkHttpClient client;
     private static ApiClient instance;
     private final Gson gson;
@@ -81,16 +64,7 @@ public class ApiClient {
         }
         return ApiClient.instance;
     }
-//    public <T, R> void post(
-//        String endpoint,
-//        T requestBody,
-//        Class<R> responseType,
-//        ApiCallback<R> callback,
-//        @Nullable Context context
-//    ) {
-//
-//
-//    }
+
     public interface ApiCallback<T> {
         void onSuccess(T data);
         void onFailure(String errorMessage);
@@ -105,7 +79,6 @@ public class ApiClient {
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 String responseBody = response.body() != null ? response.body().string() : "";
-//                Toast.makeText(context, "something", Toast.LENGTH_LONG).show();
                 if (response.isSuccessful()) {
                     try {
                         R data = gson.fromJson(responseBody, responseType);
@@ -120,20 +93,17 @@ public class ApiClient {
                         errorMessage = errorJson.get("error").getAsString();
                     } catch (JsonSyntaxException e) {
                         errorMessage = "Error from the server: error code " + response.code();
-                        // throw new RuntimeException(e);
                     }
                     callback.onFailure(errorMessage);
-                    if (response.code() == 401 || response.code() == 403) {
-                        new PreferencesHelper(context).clear();
-                        NavigationHelper.goToAuth(context);
-//                        ViewUtils.toast(new AuthActivity().getAuthActivityView(), context, "Сессия истекла. Войдите снова.");
-                    }
+//                    if ((response.code() == 401 || response.code() == 403) && context != null) {
+//                        new PreferencesHelper(context).clear();
+//                        NavigationHelper.goToAuth(context);
+//                    }
                 }
             }
         });
     }
 
-    // 2. Публичный метод для POST
     public <T, R> void post(String endpoint, T requestBody, Class<R> responseType, ApiCallback<R> callback, Context context) {
         String json = gson.toJson(requestBody);
         RequestBody body = RequestBody.create(json, MediaType.parse("application/json; charset=utf-8"));
@@ -146,17 +116,16 @@ public class ApiClient {
         execute(request, responseType, callback, context);
     }
 
-    // 3. Публичный метод для GET
     public <R> void get(String endpoint, Class<R> responseType, ApiCallback<R> callback, Context context) {
         String token = context != null ? new PreferencesHelper(context).getToken() : "!";
         Request request = new Request.Builder()
             .url(BASE_URL + endpoint)
             .addHeader("Authorization", token != null ? "Bearer " + token : "")
-            .get() // Указываем метод GET
+            .get()
             .build();
         execute(request, responseType, callback, context);
     }
-    // 4. (Бонус) GET с параметрами
+
     public <R> void getWithParams(String endpoint, Map<String, String> params, Class<R> responseType, ApiCallback<R> callback, Context context) {
         HttpUrl.Builder urlBuilder = HttpUrl.parse(BASE_URL + endpoint).newBuilder();
         for (Map.Entry<String, String> entry : params.entrySet()) {
@@ -171,19 +140,21 @@ public class ApiClient {
     public void login(
         String email,
         String password,
-        ApiCallback<LoginResponse> callback
+        ApiCallback<LoginResponse> callback,
+        Context context
     ) {
         LoginRequest req = new LoginRequest(email, password);
-        post("auth/login", req, LoginResponse.class, callback, null);
+        post("auth/login", req, LoginResponse.class, callback, context);
     }
     public void register(
         String name,
         String email,
         String password,
-        ApiCallback<RegisterResponse> callback
+        ApiCallback<RegisterResponse> callback,
+        Context context
     ) {
         RegisterRequest req = new RegisterRequest(name, email, password);
-        post("auth/register", req, RegisterResponse.class, callback, null);
+        post("auth/register", req, RegisterResponse.class, callback, context);
     }
     public boolean isTokenValid(View v, Context context) {
         boolean isValid = false;
@@ -193,19 +164,14 @@ public class ApiClient {
             public void setIsValid(boolean isIt) { isValid = isIt; };
             @Override
             public void onSuccess(VerifyJWTResponse data) {
-                Log.i("TOKEN_VALIDATION_TEST", "the token is valid: " + VerifyJWTResponse.message);
                 setIsValid(true);
-                ViewUtils.toast(v, context, "The token is valid!");
             }
             @Override
             public void onFailure(String errorMessage) {
                 setIsValid(false);
-//                ViewUtils.
-//                throw new RuntimeException("The token in SharedPreferences is not valid according to the API. Please, stop trying to hack.");
             }
         }
         jwtValidation callback = new jwtValidation();
-//        ViewUtils.toast(v, context, "The token is preparing valid!");
         get("auth/verify-jwt", VerifyJWTResponse.class, callback, context);
         return callback.getIsValid();
     }

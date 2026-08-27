@@ -178,7 +178,8 @@ public class RegisterFragment extends Fragment {
                                 new PreferencesHelper(requireContext()).saveToken(res.getToken());
                                 NavigationHelper.goToMain(requireContext());
                             }
-                    }
+                    },
+                    requireContext()
                 );
             }
         });

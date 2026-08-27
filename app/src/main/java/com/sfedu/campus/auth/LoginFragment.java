@@ -148,7 +148,8 @@ public class LoginFragment extends Fragment {
                         new PreferencesHelper(requireContext()).saveToken(data.getToken());
                         NavigationHelper.goToMain(getContext());
                     }
-                }
+                },
+                requireContext()
             );
         });
 
