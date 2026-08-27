@@ -44,6 +44,21 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
         this.listener = listener;
     }
 
+    /**
+     * Returns the correct Russian word form for "year" based on the number
+     * @param age the age number
+     * @return "год", "года", or "лет" depending on the number
+     */
+    private String getYearDeclension(int age) {
+        if (age % 10 == 1 && age % 100 != 11) {
+            return "год";
+        } else if (age % 10 >= 2 && age % 10 <= 4 && (age % 100 < 10 || age % 100 >= 20)) {
+            return "года";
+        } else {
+            return "лет";
+        }
+    }
+
     @NonNull
     @Override
     public ChildViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -221,7 +236,7 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
 
         void bind(Child child) {
             tvChildName.setText(child.getFullName() != null ? child.getFullName() : "Неизвестно");
-            tvChildAge.setText(child.getAge() != null && !child.getAge().isEmpty() ? child.getAge() : "—");
+            tvChildAge.setText(child.getAge() != null && !child.getAge().isEmpty() ? child.getAge() + " " + getYearDeclension(Integer.parseInt(child.getAge())) : "—");
             
             String pName = child.getParentFullName();
             tvParentName.setText(pName != null ? "Родитель: " + pName : "Родитель: —");

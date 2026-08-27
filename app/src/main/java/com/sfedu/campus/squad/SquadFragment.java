@@ -347,6 +347,40 @@ public class SquadFragment extends Fragment implements ChildAdapter.OnChildActio
                 .create();
         dialog.show();
 
+        // Enable/disable save button based on text changes
+        etNotes.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Enable button if there's text, disable if empty
+                String currentText = s.toString().trim();
+                boolean isEnabled = !currentText.isEmpty();
+                btnSaveNotes.setEnabled(isEnabled);
+                // Also update the visual state if DataEditWaitButton has custom state handling
+                if (isEnabled) {
+                    btnSaveNotes.setActivated(true);
+                } else {
+                    btnSaveNotes.setActivated(false);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        });
+
+        // Set initial state based on current notes
+        String initialNotes = child.getNotes() != null ? child.getNotes().trim() : "";
+        btnSaveNotes.setEnabled(!initialNotes.isEmpty());
+        if (!initialNotes.isEmpty()) {
+            btnSaveNotes.setActivated(true);
+        } else {
+            btnSaveNotes.setActivated(false);
+        }
+
         btnSaveNotes.setOnClickListener(v -> {
             String newNotes = etNotes.getText() != null ? etNotes.getText().toString().trim() : "";
             btnSaveNotes.showLoading();

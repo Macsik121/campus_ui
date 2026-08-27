@@ -1,87 +1,99 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/notification_card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="16dp"
     android:layout_marginVertical="8dp"
     app:cardElevation="2dp"
-    app:cardCornerRadius="12dp">
+    app:cardCornerRadius="12dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="@android:color/black">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Top row: Icon + Title -->
-        <LinearLayout
-            android:layout_width="match_parent"
+        <!-- Left border for unread notifications -->
+        <View
+            android:id="@+id/unread_left_border"
+            android:layout_width="4dp"
+            android:layout_height="0dp"
+            android:background="?attr/colorPrimary"
+            android:visibility="gone"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <!-- Notification type icon -->
+        <ImageView
+            android:id="@+id/notification_icon"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_notification_info"
+            android:contentDescription="@string/notification_type_icon"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="4dp" />
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/notification_title"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorOnSurface"
+            android:text="Title"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toEndOf="@id/notification_icon"
+            app:layout_constraintEnd_toStartOf="@id/notification_time" />
 
-            <!-- Notification type icon -->
-            <ImageView
-                android:id="@+id/notification_icon"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@drawable/ic_notification_bell"
-                android:contentDescription="@string/notification_type_icon"
-                app:tint="?attr/colorPrimary" />
-
-            <TextView
-                android:id="@+id/notification_title"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_weight="1"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface"
-                android:text="Title" />
-
-        </LinearLayout>
+        <!-- Time -->
+        <TextView
+            android:id="@+id/notification_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textSize="12sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:text="Time"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
         <!-- Description -->
         <TextView
             android:id="@+id/notification_description"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:layout_marginStart="56dp"
+            android:layout_marginEnd="12dp"
             android:textSize="14sp"
             android:textColor="?attr/colorOnSurfaceVariant"
-            android:text="Description goes here..." />
+            android:text="Description"
+            app:layout_constraintTop_toBottomOf="@id/notification_title"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Bottom row: Time + Read button (for unread) -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
+        <!-- Read button -->
+        <Button
+            android:id="@+id/read_button"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
             android:layout_marginTop="12dp"
-            android:gravity="center_vertical">
+            android:layout_marginStart="56dp"
+            android:text="@string/read_button"
+            android:textSize="12sp"
+            android:textAllCaps="false"
+            android:visibility="gone"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            app:layout_constraintTop_toBottomOf="@id/notification_description"
+            app:layout_constraintStart_toStartOf="parent" />
 
-            <TextView
-                android:id="@+id/notification_time"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textSize="12sp"
-                android:textColor="?attr/colorOutline"
-                android:text="12:00 PM" />
-
-            <!-- Read button (visible only for unread notifications) -->
-            <Button
-                android:id="@+id/read_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Прочитано"
-                android:textSize="12sp"
-                android:visibility="gone"
-                style="@style/Widget.Material3.Button.TextButton" />
-
-        </LinearLayout>
-
-    </LinearLayout>
-
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

@@ -26,7 +26,7 @@ public class TimeUtils {
         LocalDateTime then = sentAt.atZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
 
         long minutes = ChronoUnit.MINUTES.between(then, now);
-        
+
         // Будущее время (на случай рассинхрона часов)
         if (minutes < 0) return "только что";
 
@@ -49,6 +49,52 @@ public class TimeUtils {
         }
 
         // Более ранние даты
+        return then.format(DATE_FORMAT);
+    }
+
+    /**
+     * Возвращает относительное время для уведомлений в формате:
+     * - < 1 минуты: секунды
+     * - < 1 часа: минуты
+     * - < 1 дня: часы
+     * - < 30 дней: дни
+     * - >= 30 дней: dd.MM.yyyy
+     */
+    public static String getNotificationRelativeTime(OffsetDateTime sentAt) {
+        if (sentAt == null) return "";
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime then = sentAt.atZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
+
+        // Будущее время (на случай рассинхрона часов)
+        if (then.isAfter(now)) return "только что";
+
+        long seconds = ChronoUnit.SECONDS.between(then, now);
+        long minutes = ChronoUnit.MINUTES.between(then, now);
+        long hours = ChronoUnit.HOURS.between(then, now);
+        long days = ChronoUnit.DAYS.between(then, now);
+
+        // Меньше минуты - секунды
+        if (seconds < 60) {
+            return seconds + " " + getRussianPlural(seconds, "секунду", "секунды", "секунд") + " назад";
+        }
+
+        // Меньше часа - минуты
+        if (minutes < 60) {
+            return minutes + " " + getRussianPlural(minutes, "минуту", "минуты", "минут") + " назад";
+        }
+
+        // Меньше дня - часы
+        if (hours < 24) {
+            return hours + " " + getRussianPlural(hours, "час", "часа", "часов") + " назад";
+        }
+
+        // Меньше 30 дней - дни
+        if (days < 30) {
+            return days + " " + getRussianPlural(days, "день", "дня", "дней") + " назад";
+        }
+
+        // 30 дней и более - дата
         return then.format(DATE_FORMAT);
     }
 

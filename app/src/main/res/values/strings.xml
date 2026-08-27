@@ -15,4 +15,5 @@
     <string name="notification_read_all_success">Все уведомления отмечены как прочитанные</string>
     <string name="notification_error">Ошибка при обновлении уведомлений</string>
     <string name="loading_notifications">Загрузка уведомлений…</string>
+    <string name="notifications_page_title">Страница - Отображаются уведомления</string>
 </resources>

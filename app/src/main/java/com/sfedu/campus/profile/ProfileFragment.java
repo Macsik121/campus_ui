@@ -121,9 +121,9 @@ public class ProfileFragment extends Fragment {
         progressBar = view.findViewById(R.id.progress_bar);
         viewOverlay = view.findViewById(R.id.view_overlay);
 
-        // Requirement 2: Set placeholder for phone field
+        // Set input types via EditText, hints via TextInputLayout for proper floating label behavior (placeholder on focus only)
         etPhone.setInputType(InputType.TYPE_CLASS_PHONE);
-        etPhone.setHint("+7 (xxx) xxx-xx-xx");
+        tilPhone.setHint("+7 (xxx) xxx-xx-xx");
 
         // Set email input type and basic white space filter
         etEmail.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);

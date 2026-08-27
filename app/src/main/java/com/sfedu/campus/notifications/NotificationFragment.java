@@ -13,31 +13,37 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.sfedu.campus.R;
-import com.sfedu.campus.generated.api.NotificationsApi;
-import com.sfedu.campus.generated.invoker.ApiCallback;
-import com.sfedu.campus.generated.invoker.ApiException;
+import com.sfedu.campus.data.datasource.DataCallback;
 import com.sfedu.campus.generated.model.Notification;
 import com.sfedu.campus.generated.model.ReadAllNotifications200Response;
-import com.sfedu.campus.generated.model.ReadNotificationRequest;
 import com.sfedu.campus.generated.model.ReadNotificationResponse;
 import com.sfedu.campus.helpers.ApiProvider;
+import com.sfedu.campus.helpers.ViewUtils;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
-public class NotificationFragment extends Fragment {
+public class NotificationFragment extends Fragment implements NotificationAdapter.OnNotificationActionListener {
 
-    private RecyclerView recyclerView;
-    private NotificationAdapter adapter;
-    private ProgressBar progressBar;
-    private View loadingOverlay;
+    private static final String TAG = "NotificationFragment";
+
+    // UI Elements
+    private TextView pageTitle;
     private TextView unreadCountText;
     private Button readAllButton;
-    private NotificationsApi notificationsApi;
+    private RecyclerView recyclerView;
+    private ProgressBar progressBar;
+    private View loadingOverlay;
+    private TextView emptyStateText;
+
+    // Data
+    private NotificationAdapter adapter;
+    private NotificationRepository repository;
+    private boolean isLoading = false;
 
     public NotificationFragment() {
         // Required empty public constructor
@@ -53,198 +59,184 @@ public class NotificationFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Initialize views
-        recyclerView = view.findViewById(R.id.notifications_recycler);
-        progressBar = view.findViewById(R.id.notifications_progress);
-        loadingOverlay = view.findViewById(R.id.loading_overlay);
+        // Initialize UI elements
+        pageTitle = view.findViewById(R.id.page_title);
         unreadCountText = view.findViewById(R.id.unread_count_text);
         readAllButton = view.findViewById(R.id.read_all_button);
+        recyclerView = view.findViewById(R.id.recycler_view);
+        progressBar = view.findViewById(R.id.progress_bar);
+        loadingOverlay = view.findViewById(R.id.loading_overlay);
+        emptyStateText = view.findViewById(R.id.empty_state_text);
 
-        // Initialize API with bearer token from SharedPreferences
-        notificationsApi = new NotificationsApi(ApiProvider.getApiClient(requireContext()));
-
-        // Setup adapter
+        // Setup RecyclerView
         adapter = new NotificationAdapter();
-        adapter.setOnNotificationActionListener(new NotificationAdapter.OnNotificationActionListener() {
-            @Override
-            public void onMarkAsRead(Notification notification, int position) {
-                markNotificationAsRead(notification, position);
-            }
-        });
+        adapter.setOnNotificationActionListener(this);
+        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
+        // Setup Repository
+        repository = new NotificationRepository(requireContext());
+
         // Setup Read All button
-        readAllButton.setOnClickListener(v -> markAllNotificationsAsRead());
+        readAllButton.setOnClickListener(v -> markAllAsRead());
 
-        // Fetch notifications on start
-        fetchNotifications();
+        // Load notifications
+        loadNotifications();
     }
 
-    private void fetchNotifications() {
-        showLoading(true);
+    private void loadNotifications() {
+        setLoading(true);
+        repository.getNotifications(new DataCallback<List<Notification>>() {
+            @Override
+            public void onSuccess(List<Notification> notifications) {
+                requireActivity().runOnUiThread(() -> {
+                    setLoading(false);
+                    adapter.setNotifications(notifications);
+                    updateUnreadCount(notifications);
+                    updateEmptyState(notifications);
+                });
+            }
 
-        try {
-            notificationsApi.getNotificationsAsync(20, new ApiCallback<List<Notification>>() {
-                @Override
-                public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-                    requireActivity().runOnUiThread(() -> {
-                        showLoading(false);
-                        Log.e("NotificationFragment", "Failed to fetch notifications", e);
-                        Toast.makeText(requireContext(), R.string.notification_error, Toast.LENGTH_SHORT).show();
-                    });
-                }
-
-                @Override
-                public void onSuccess(List<Notification> result, int statusCode, Map<String, List<String>> responseHeaders) {
-                    requireActivity().runOnUiThread(() -> {
-                        showLoading(false);
-                        if (result != null) {
-                            adapter.setNotifications(result);
-                            updateUnreadCount();
-                        }
-                    });
-                }
-
-                @Override
-                public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
-                }
-
-                @Override
-                public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
-                }
-            });
-        } catch (ApiException e) {
-            showLoading(false);
-            Log.e("NotificationFragment", "ApiException during fetch", e);
-        }
+            @Override
+            public void onError(String error) {
+                requireActivity().runOnUiThread(() -> {
+                    setLoading(false);
+                    ViewUtils.toast(requireView(), requireContext(), getString(R.string.notification_error));
+                    Log.e(TAG, "Error loading notifications: " + error);
+                });
+            }
+        });
     }
 
-    private void markNotificationAsRead(Notification notification, int position) {
-        if (notification.getId() == null) {
-            Log.w("NotificationFragment", "Notification ID is null");
-            return;
+    private void updateUnreadCount(List<Notification> notifications) {
+        int unreadCount = 0;
+        if (notifications != null) {
+            for (Notification n : notifications) {
+                if (n.getIsRead() == null || !n.getIsRead()) {
+                    unreadCount++;
+                }
+            }
         }
-
-        // 3.1. Замораживается после: нажатия на кнопку "Прочитано"
-        freezeUI(true);
-
-        ReadNotificationRequest request = new ReadNotificationRequest();
-        request.setNotifId(notification.getId());
-
-        try {
-            notificationsApi.readNotificationAsync(request, new ApiCallback<ReadNotificationResponse>() {
-                @Override
-                public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-                    requireActivity().runOnUiThread(() -> {
-                        freezeUI(false);
-                        Log.e("NotificationFragment", "Failed to mark notification as read", e);
-                        Toast.makeText(requireContext(), R.string.notification_error, Toast.LENGTH_SHORT).show();
-                    });
-                }
-
-                @Override
-                public void onSuccess(ReadNotificationResponse result, int statusCode, Map<String, List<String>> responseHeaders) {
-                    requireActivity().runOnUiThread(() -> {
-                        freezeUI(false);
-                        // 3.2. Изменяется: состояние одной карточки уведомления, кол-во непрочитанных на 1,
-                        // если непрочитанных = 0, то исчезает кнопка "Прочитать всё"
-                        notification.setIsRead(true);
-                        adapter.notifyItemChanged(position);
-                        updateUnreadCount();
-                        Toast.makeText(requireContext(), R.string.notification_read_success, Toast.LENGTH_SHORT).show();
-                    });
-                }
-
-                @Override
-                public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
-                }
-
-                @Override
-                public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
-                }
-            });
-        } catch (ApiException e) {
-            freezeUI(false);
-            Log.e("NotificationFragment", "ApiException during mark as read", e);
-        }
-    }
-
-    private void markAllNotificationsAsRead() {
-        // 3.1. Замораживается после: нажатия на кнопку "Прочитать всё"
-        freezeUI(true);
-
-        try {
-            notificationsApi.readAllNotificationsAsync(new ApiCallback<ReadAllNotifications200Response>() {
-                @Override
-                public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-                    requireActivity().runOnUiThread(() -> {
-                        freezeUI(false);
-                        Log.e("NotificationFragment", "Failed to mark all notifications as read", e);
-                        Toast.makeText(requireContext(), R.string.notification_error, Toast.LENGTH_SHORT).show();
-                    });
-                }
-
-                @Override
-                public void onSuccess(ReadAllNotifications200Response result, int statusCode, Map<String, List<String>> responseHeaders) {
-                    requireActivity().runOnUiThread(() -> {
-                        freezeUI(false);
-                        // 3.2. Изменяется: состояние всех карточек уведомления, которые были не прочитаны,
-                        // кол-во непрочитанных = 0, исчезает кнопка "Прочитать всё"
-                        for (int i = 0; i < adapter.getItemCount(); i++) {
-                            Notification n = adapter.getNotifications().get(i);
-                            if (Boolean.FALSE.equals(n.getIsRead())) {
-                                n.setIsRead(true);
-                                adapter.notifyItemChanged(i);
-                            }
-                        }
-                        updateUnreadCount();
-                        Toast.makeText(requireContext(), R.string.notification_read_all_success, Toast.LENGTH_SHORT).show();
-                    });
-                }
-
-                @Override
-                public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
-                }
-
-                @Override
-                public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
-                }
-            });
-        } catch (ApiException e) {
-            freezeUI(false);
-            Log.e("NotificationFragment", "ApiException during mark all as read", e);
-        }
-    }
-
-    private void updateUnreadCount() {
-        int unreadCount = adapter.getUnreadCount();
         unreadCountText.setText(getString(R.string.unread_count_format, unreadCount));
+        readAllButton.setVisibility(unreadCount > 0 ? View.VISIBLE : View.GONE);
+    }
 
-        // Show/hide Read All button based on unread count
-        if (unreadCount > 0) {
-            readAllButton.setVisibility(View.VISIBLE);
-        } else {
-            readAllButton.setVisibility(View.GONE);
+    private void updateEmptyState(List<Notification> notifications) {
+        boolean isEmpty = notifications == null || notifications.isEmpty();
+        emptyStateText.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
+        recyclerView.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
+    }
+
+    private void setLoading(boolean loading) {
+        isLoading = loading;
+        progressBar.setVisibility(loading ? View.VISIBLE : View.GONE);
+        loadingOverlay.setVisibility(loading ? View.VISIBLE : View.GONE);
+        recyclerView.setEnabled(!loading);
+        readAllButton.setEnabled(!loading);
+        if (adapter != null) {
+            // Disable read buttons in adapter during loading
+            // We'll handle this by checking isLoading in the adapter callback
         }
     }
 
-    private void showLoading(boolean isLoading) {
-        if (progressBar != null) {
-            progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
-        }
+    @Override
+    public void onMarkAsRead(Notification notification, int position) {
+        if (isLoading) return;
+        if (notification.getId() == null) return;
+
+        // Freeze the specific card - disable the read button
+        freezeCard(position, true);
+
+        repository.markAsRead(notification.getId(), new DataCallback<ReadNotificationResponse>() {
+            @Override
+            public void onSuccess(ReadNotificationResponse response) {
+                requireActivity().runOnUiThread(() -> {
+                    // Update the notification in the list
+                    Notification updatedNotification = new Notification();
+                    updatedNotification.setId(notification.getId());
+                    updatedNotification.setTitle(notification.getTitle());
+                    updatedNotification.setDescription(notification.getDescription());
+                    updatedNotification.setSentAt(notification.getSentAt());
+                    updatedNotification.setIsRead(true);
+
+                    List<Notification> currentList = adapter.getNotifications();
+                    if (position < currentList.size()) {
+                        currentList.set(position, updatedNotification);
+                        adapter.notifyItemChanged(position);
+                    }
+
+                    // Update unread count
+                    updateUnreadCount(currentList);
+
+                    freezeCard(position, false);
+                    ViewUtils.toast(requireView(), requireContext(), getString(R.string.notification_read_success));
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                requireActivity().runOnUiThread(() -> {
+                    freezeCard(position, false);
+                    ViewUtils.toast(requireView(), requireContext(), getString(R.string.notification_error));
+                    Log.e(TAG, "Error marking notification as read: " + error);
+                });
+            }
+        });
     }
 
-    private void freezeUI(boolean freeze) {
-        if (loadingOverlay != null) {
-            loadingOverlay.setVisibility(freeze ? View.VISIBLE : View.GONE);
-        }
-        // Also disable RecyclerView interaction during freeze
-        if (recyclerView != null) {
-            recyclerView.setEnabled(!freeze);
-        }
-        // Disable header buttons
-        if (readAllButton != null) {
-            readAllButton.setEnabled(!freeze);
+    private void markAllAsRead() {
+        if (isLoading) return;
+
+        // Freeze entire list
+        setLoading(true);
+
+        repository.markAllAsRead(new DataCallback<ReadAllNotifications200Response>() {
+            @Override
+            public void onSuccess(ReadAllNotifications200Response response) {
+                requireActivity().runOnUiThread(() -> {
+                    // Update all notifications to read
+                    List<Notification> currentList = adapter.getNotifications();
+                    for (int i = 0; i < currentList.size(); i++) {
+                        Notification n = currentList.get(i);
+                        if (n.getIsRead() == null || !n.getIsRead()) {
+                            Notification updated = new Notification();
+                            updated.setId(n.getId());
+                            updated.setTitle(n.getTitle());
+                            updated.setDescription(n.getDescription());
+                            updated.setSentAt(n.getSentAt());
+                            updated.setIsRead(true);
+                            currentList.set(i, updated);
+                        }
+                    }
+                    adapter.notifyDataSetChanged();
+
+                    // Update unread count
+                    updateUnreadCount(currentList);
+
+                    setLoading(false);
+                    ViewUtils.toast(requireView(), requireContext(), getString(R.string.notification_read_all_success));
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                requireActivity().runOnUiThread(() -> {
+                    setLoading(false);
+                    ViewUtils.toast(requireView(), requireContext(), getString(R.string.notification_error));
+                    Log.e(TAG, "Error marking all notifications as read: " + error);
+                });
+            }
+        });
+    }
+
+    private void freezeCard(int position, boolean freeze) {
+        RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(position);
+        if (holder instanceof NotificationAdapter.NotificationViewHolder) {
+            NotificationAdapter.NotificationViewHolder vh = (NotificationAdapter.NotificationViewHolder) holder;
+            // We need to access the readButton - but it's private
+            // Instead, we can just disable the whole item view
+            vh.itemView.setEnabled(!freeze);
+            vh.itemView.setAlpha(freeze ? 0.5f : 1.0f);
         }
     }
 }

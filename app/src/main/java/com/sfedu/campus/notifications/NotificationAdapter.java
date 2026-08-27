@@ -57,104 +57,75 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         return notifications.size();
     }
 
-    public int getUnreadCount() {
-        int count = 0;
-        for (Notification n : notifications) {
-            if (Boolean.FALSE.equals(n.getIsRead())) {
-                count++;
-            }
-        }
-        return count;
-    }
-
     class NotificationViewHolder extends RecyclerView.ViewHolder {
-        ImageView iconView;
-        TextView titleText;
-        TextView descriptionText;
-        TextView timeText;
-        Button readButton;
-        View itemView;
+        private final View cardView;
+        private final View unreadLeftBorder;
+        private final ImageView notificationIcon;
+        private final TextView notificationTitle;
+        private final TextView notificationDescription;
+        private final TextView notificationTime;
+        private final Button readButton;
 
         NotificationViewHolder(@NonNull View itemView) {
             super(itemView);
-            this.itemView = itemView;
-            iconView = itemView.findViewById(R.id.notification_icon);
-            titleText = itemView.findViewById(R.id.notification_title);
-            descriptionText = itemView.findViewById(R.id.notification_description);
-            timeText = itemView.findViewById(R.id.notification_time);
+            cardView = itemView.findViewById(R.id.notification_card);
+            unreadLeftBorder = itemView.findViewById(R.id.unread_left_border);
+            notificationIcon = itemView.findViewById(R.id.notification_icon);
+            notificationTitle = itemView.findViewById(R.id.notification_title);
+            notificationDescription = itemView.findViewById(R.id.notification_description);
+            notificationTime = itemView.findViewById(R.id.notification_time);
             readButton = itemView.findViewById(R.id.read_button);
         }
 
         void bind(Notification notification, int position) {
-            titleText.setText(notification.getTitle());
-            descriptionText.setText(notification.getDescription());
+            // Set title and description
+            notificationTitle.setText(notification.getTitle() != null ? notification.getTitle() : "");
+            notificationDescription.setText(notification.getDescription() != null ? notification.getDescription() : "");
 
-            // Set time
-            if (notification.getSentAt() != null) {
-                timeText.setText(TimeUtils.getRelativeTime(notification.getSentAt()));
-            } else {
-                timeText.setText("");
-            }
+            // Set time using new format
+            notificationTime.setText(TimeUtils.getNotificationRelativeTime(notification.getSentAt()));
 
-            // Set icon based on notification type
-            // We'll use the title/description to determine type, or you could add a type field
-            // For now, we'll use a simple heuristic based on title keywords
-            int iconRes = getIconForNotification(notification);
-            iconView.setImageResource(iconRes);
+            // Set notification type icon
+            setNotificationIcon(notification.getTitle());
 
-            // Set content description for accessibility
-            String contentDesc = getContentDescriptionForIcon(iconRes);
-            iconView.setContentDescription(contentDesc);
-
-            // Set background color based on read status
-            boolean isRead = Boolean.TRUE.equals(notification.getIsRead());
+            // Set read/unread styling
+            boolean isRead = notification.getIsRead() != null && notification.getIsRead();
             if (isRead) {
-                itemView.setBackgroundColor(itemView.getContext().getColor(android.R.color.white));
-            } else {
-                // Transparent blue for unread
-                itemView.setBackgroundColor(itemView.getContext().getColor(R.color.unread_background));
-            }
-
-            // Show/hide read button based on read status
-            if (isRead) {
+                // Read: white background, no left border
+                cardView.setBackgroundResource(android.R.color.white);
+                unreadLeftBorder.setVisibility(View.GONE);
                 readButton.setVisibility(View.GONE);
             } else {
+                // Unread: transparent blue background with blue left border
+                cardView.setBackgroundResource(R.color.unread_background);
+                unreadLeftBorder.setVisibility(View.VISIBLE);
                 readButton.setVisibility(View.VISIBLE);
-                readButton.setOnClickListener(v -> {
-                    if (listener != null) {
-                        listener.onMarkAsRead(notification, position);
-                    }
-                });
             }
+
+            // Set read button click listener
+            readButton.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onMarkAsRead(notification, position);
+                }
+            });
         }
 
-        private int getIconForNotification(Notification notification) {
-            // Determine icon based on notification content
-            // You can extend this logic based on your actual notification types
-            String title = notification.getTitle() != null ? notification.getTitle().toLowerCase() : "";
-            String description = notification.getDescription() != null ? notification.getDescription().toLowerCase() : "";
-
-            if (title.contains("карта") || title.contains("перемещ") ||
-                description.contains("карта") || description.contains("перемещ") ||
-                title.contains("map") || title.contains("location")) {
-                return R.drawable.ic_notification_map;
-            } else if (title.contains("важно") || title.contains("срочно") || title.contains("критич") ||
-                    description.contains("важно") || description.contains("срочно") || description.contains("критич") ||
-                    title.contains("important") || title.contains("urgent")) {
-                return R.drawable.ic_notification_important;
-            } else {
-                // Default to bell for informational announcements
-                return R.drawable.ic_notification_bell;
+        private void setNotificationIcon(String title) {
+            if (title == null) {
+                notificationIcon.setImageResource(R.drawable.ic_notification_info);
+                return;
             }
-        }
 
-        private String getContentDescriptionForIcon(int iconRes) {
-            if (iconRes == R.drawable.ic_notification_map) {
-                return itemView.getContext().getString(R.string.notification_type_map);
-            } else if (iconRes == R.drawable.ic_notification_important) {
-                return itemView.getContext().getString(R.string.notification_type_important);
+            String lowerTitle = title.toLowerCase();
+            if (lowerTitle.contains("карт") || lowerTitle.contains("перемещ") || lowerTitle.contains("map") || lowerTitle.contains("location")) {
+                notificationIcon.setImageResource(R.drawable.ic_notification_map);
+            } else if (lowerTitle.contains("важно") || lowerTitle.contains("important") || lowerTitle.contains("экстрен") || lowerTitle.contains("срочн")) {
+                notificationIcon.setImageResource(R.drawable.ic_notification_important);
+            } else if (lowerTitle.contains("информ") || lowerTitle.contains("объявлен") || lowerTitle.contains("info") || lowerTitle.contains("announce")) {
+                notificationIcon.setImageResource(R.drawable.ic_notification_bell);
             } else {
-                return itemView.getContext().getString(R.string.notification_type_info);
+                // Default to bell for general notifications
+                notificationIcon.setImageResource(R.drawable.ic_notification_bell);
             }
         }
     }
