@@ -179,7 +179,7 @@ paths:
       tags:
         - "squads"
       summary: "Получить список детей в отряде"
-      description: "Возвращает массив объектов Child с ФИО, тегами и телефоном родителей"
+      description: "Возвращает объект GetSquadChildrenResponse с ФИО, тегами и телефоном родителей"
       operationId: "getChildrenBySquad"
       parameters:
         - name: "squadId"
@@ -190,11 +190,9 @@ paths:
           format: "uuid"
       responses:
         "200":
-          description: "Список детей получен"
+          description: "Данные отряда и список детей получены"
           schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Child"
+            $ref: "#/definitions/GetSquadChildrenResponse"
         "401":
           description: "Неавторизованный доступ"
         "403":
@@ -678,9 +676,7 @@ paths:
         "200":
           description: "Список детей на мероприятии"
           schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/GetAttendanceResponse"
+            $ref: "#/definitions/GetAttendanceResponse"
         "401":
           description: "Неавторизованный доступ"
         "403":
@@ -718,6 +714,26 @@ paths:
           description: "Отмечать детей может только назначенный на отряд вожатый или старший."
         "404":
           description: "Ребёнок или мероприятие не найдены"
+  /users/squad:
+    get:
+      tags:
+        - "users"
+      summary: "Получить данные текущего пользователя"
+      description: "Возвращает ID отряда, к которому привязан вожатый"
+      operationId: "getUserSquad"
+      responses:
+        "200":
+          description: "Отряд пользователя"
+          schema:
+            type: "object"
+            properties:
+              squadId:
+                type: "string"
+                format: "uuid"
+        "401":
+          description: "Неавторизованный доступ"
+        "404":
+          description: "Пользователь не привязан ни к одному отряду"
   /users/profile:
     get:
       tags:
@@ -907,6 +923,18 @@ definitions:
       info:
         type: "string"
         example: "Аллергия на арахис"
+  GetSquadChildrenResponse:
+    type: "object"
+    properties:
+      squadId:
+        type: "string"
+        format: "uuid"
+      squadTitle:
+        type: "string"
+      children:
+        type: "array"
+        items:
+          $ref: "#/definitions/Child"
   ChangeChildForSquadRequest:
     type: "object"
     properties:

@@ -3,15 +3,27 @@ package com.sfedu.campus.helpers;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.sfedu.campus.generated.model.Child;
+
 import org.json.JSONObject;
 
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import android.util.Base64;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public class PreferencesHelper {
     private static final String PREF_NAME = "AppPrefs";
     private static final String KEY_TOKEN = "jwt_token";
     private static final String KEY_JESUS_SAYING = "Jesus_says";
+    // Squad caching
+    private static final String KEY_SQUAD_ID = "squad_id";
+    private static final String KEY_SQUAD_TITLE = "squad_title";
+    private static final String KEY_CHILDREN_LIST = "children_list";
     private final SharedPreferences prefs;
     private final SharedPreferences.Editor editor;
     public PreferencesHelper(Context context) {
@@ -70,5 +82,67 @@ public class PreferencesHelper {
             e.printStackTrace();
             return null;
         }
+    }
+
+    // Squad caching methods
+    public void saveSquadId(UUID squadId) {
+        if (squadId != null) {
+            editor.putString(KEY_SQUAD_ID, squadId.toString()).apply();
+        } else {
+            editor.remove(KEY_SQUAD_ID).apply();
+        }
+    }
+
+    public UUID getSquadId() {
+        String squadIdStr = prefs.getString(KEY_SQUAD_ID, null);
+        if (squadIdStr != null) {
+            try {
+                return UUID.fromString(squadIdStr);
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    public boolean hasSquadId() {
+        return prefs.contains(KEY_SQUAD_ID);
+    }
+
+    public void saveSquadTitle(String squadTitle) {
+        if (squadTitle != null) {
+            editor.putString(KEY_SQUAD_TITLE, squadTitle).apply();
+        } else {
+            editor.remove(KEY_SQUAD_TITLE).apply();
+        }
+    }
+
+    public String getSquadTitle() {
+        return prefs.getString(KEY_SQUAD_TITLE, null);
+    }
+
+    public void saveChildrenList(List<Child> children) {
+        Gson gson = new Gson();
+        String json = gson.toJson(children);
+        editor.putString(KEY_CHILDREN_LIST, json).apply();
+    }
+
+    public List<Child> getChildrenList() {
+        String json = prefs.getString(KEY_CHILDREN_LIST, null);
+        if (json != null && !json.isEmpty()) {
+            Gson gson = new Gson();
+            Type type = new TypeToken<List<Child>>() {}.getType();
+            List<Child> children = gson.fromJson(json, type);
+            return children != null ? children : new ArrayList<>();
+        }
+        return new ArrayList<>();
+    }
+
+    public boolean hasChildrenCache() {
+        return prefs.contains(KEY_CHILDREN_LIST);
+    }
+
+    public void clearSquadData() {
+        editor.remove(KEY_SQUAD_ID).remove(KEY_SQUAD_TITLE).remove(KEY_CHILDREN_LIST).apply();
     }
 }

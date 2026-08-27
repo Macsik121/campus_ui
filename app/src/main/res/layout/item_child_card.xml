@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:cardUseCompatPadding="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <!-- Child Photo -->
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/iv_child_photo"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@drawable/ic_child_placeholder"
+            android:contentDescription="Фото ребёнка"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"/>
+
+        <!-- Child Name -->
+        <TextView
+            android:id="@+id/tv_child_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:text="Имя Фамилия"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            android:ellipsize="end"
+            android:maxLines="1"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toEndOf="@id/iv_child_photo"
+            app:layout_constraintEnd_toStartOf="@id/tv_child_age"/>
+
+        <!-- Child Age -->
+        <TextView
+            android:id="@+id/tv_child_age"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="10"
+            android:textSize="16sp"
+            android:textColor="#757575"
+            android:background="@drawable/bg_age_badge"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:gravity="center"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Parent Name -->
+        <LinearLayout
+            android:id="@+id/ll_parent_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            app:layout_constraintTop_toBottomOf="@id/tv_child_name"
+            app:layout_constraintStart_toEndOf="@id/iv_child_photo"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_person_placeholder"
+                app:tint="#757575"
+                android:contentDescription=""/>
+
+            <TextView
+                android:id="@+id/tv_parent_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Родитель: Иван Иванович"
+                android:textSize="14sp"
+                android:textColor="#757575"
+                android:ellipsize="end"
+                android:maxLines="1"/>
+
+            <ImageView
+                android:id="@+id/iv_copy_parent_name"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="8dp"
+                android:src="@drawable/ic_copy"
+                app:tint="#757575"
+                android:contentDescription="Скопировать имя родителя"/>
+
+        </LinearLayout>
+
+        <!-- Parent Phone -->
+        <LinearLayout
+            android:id="@+id/ll_parent_phone"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            app:layout_constraintTop_toBottomOf="@id/ll_parent_name"
+            app:layout_constraintStart_toEndOf="@id/iv_child_photo"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_phone"
+                app:tint="#757575"
+                android:contentDescription=""/>
+
+            <TextView
+                android:id="@+id/tv_parent_phone"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="+7 (999) 123-45-67"
+                android:textSize="14sp"
+                android:textColor="#757575"
+                android:ellipsize="end"
+                android:maxLines="1"/>
+
+            <ImageView
+                android:id="@+id/iv_copy_parent_phone"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="8dp"
+                android:src="@drawable/ic_copy"
+                app:tint="#757575"
+                android:contentDescription="Скопировать телефон родителя"/>
+
+        </LinearLayout>
+
+        <!-- Tags -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/cg_tags"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:visibility="gone"
+            app:singleLine="false"
+            app:layout_constraintTop_toBottomOf="@id/ll_parent_phone"
+            app:layout_constraintStart_toEndOf="@id/iv_child_photo"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Notes -->
+        <LinearLayout
+            android:id="@+id/ll_notes"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            app:layout_constraintTop_toBottomOf="@id/cg_tags"
+            app:layout_constraintStart_toEndOf="@id/iv_child_photo"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_notes"
+                app:tint="#757575"
+                android:contentDescription=""/>
+
+            <TextView
+                android:id="@+id/tv_notes"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Заметки о ребёнке..."
+                android:textSize="14sp"
+                android:textColor="#757575"
+                android:ellipsize="end"
+                android:maxLines="2"/>
+
+            <ImageView
+                android:id="@+id/iv_edit_notes"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="8dp"
+                android:src="@drawable/ic_edit"
+                app:tint="#757575"
+                android:contentDescription="Редактировать заметки"/>
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>

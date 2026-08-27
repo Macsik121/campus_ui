@@ -1,17 +1,18 @@
 package com.sfedu.campus.profile;
 
-import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.InputFilter;
+import android.text.InputType;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,20 +22,14 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.sfedu.campus.R;
-import com.sfedu.campus.auth.AuthActivity;
 import com.sfedu.campus.data.datasource.DataCallback;
 import com.sfedu.campus.generated.api.ProfileApi;
 import com.sfedu.campus.generated.invoker.ApiClient;
-import com.sfedu.campus.generated.invoker.ApiException;
 import com.sfedu.campus.generated.invoker.Configuration;
 import com.sfedu.campus.generated.model.UserProfile;
 import com.sfedu.campus.helpers.NavigationHelper;
 import com.sfedu.campus.helpers.PreferencesHelper;
 import com.sfedu.campus.helpers.ViewUtils;
-
-import org.json.JSONObject;
-
-import java.util.UUID;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -61,7 +56,6 @@ public class ProfileFragment extends Fragment {
     private PreferencesHelper preferencesHelper;
     private ProfileApi profileApi;
     private UserProfile currentProfile;
-    private UserProfile originalProfile;
     private boolean isLoading = false;
 
     // Track original values for change detection
@@ -88,7 +82,6 @@ public class ProfileFragment extends Fragment {
 
         // Set Bearer token for authentication
         String token = preferencesHelper.getToken();
-        Log.i("ProfileFragment", "Setting Bearer token: " + token);
         if (token != null) {
             apiClient.setApiKey("Bearer " + token);
         }
@@ -127,33 +120,75 @@ public class ProfileFragment extends Fragment {
         btnLogout = view.findViewById(R.id.btn_logout);
         progressBar = view.findViewById(R.id.progress_bar);
         viewOverlay = view.findViewById(R.id.view_overlay);
+
+        // Requirement 2: Set placeholder for phone field
+        etPhone.setInputType(InputType.TYPE_CLASS_PHONE);
+        etPhone.setHint("+7 (xxx) xxx-xx-xx");
+
+        // Set email input type and basic white space filter
+        etEmail.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
+        etEmail.setFilters(new InputFilter[]{
+            (source, start, end, dest, dstart, dend) -> {
+                for (int i = start; i < end; i++) {
+                    if (Character.isWhitespace(source.charAt(i))) {
+                        return "";
+                    }
+                }
+                return null;
+            }
+        });
     }
 
     private void setupListeners() {
-        // Text change listeners for change detection
-        TextWatcher changeWatcher = new TextWatcher() {
+        // General text watcher for changes in name
+        etName.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 checkForChanges();
             }
-
             @Override
             public void afterTextChanged(Editable s) {}
-        };
+        });
 
-        etName.addTextChangedListener(changeWatcher);
-        etEmail.addTextChangedListener(changeWatcher);
-        etPhone.addTextChangedListener(changeWatcher);
+        // Requirement 1: Email validation following the pattern and preventing wrong address to be written (via error display and button disabling)
+        etEmail.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String email = s.toString().trim();
+                if (!email.isEmpty() && !isValidEmail(email)) {
+                    tilEmail.setError("Неверный формат почты");
+                } else {
+                    tilEmail.setError(null);
+                }
+                checkForChanges();
+            }
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+
+        // Requirement 2: Phone field following the pattern +7 (xxx) xxx-xx-xx
+        etPhone.addTextChangedListener(new PhoneTextWatcher(etPhone));
+        // Still need to check for changes on phone field
+        etPhone.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                checkForChanges();
+            }
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
 
         // Save button
         btnSaveChanges.setOnClickListener(v -> saveProfile());
 
         // Change password button
         btnChangePassword.setOnClickListener(v -> {
-            // Placeholder for change password functionality
             ViewUtils.toast(requireView(), requireContext(), "Функция смены пароля будет реализована позже");
         });
 
@@ -166,35 +201,26 @@ public class ProfileFragment extends Fragment {
         setLoading(true);
 
         new Thread(() -> {
-//            try {
-            // Update token before request
-//            Log.i("ProfileFragment", "Loading profile. Token before the request: " + profileApi.getApiClient().getBasePath() + " " + profileApi.getApiClient().getHttpClient().toString());
-//            String token = preferencesHelper.getToken();
-//            if (token != null) {
-//                profileApi.getApiClient().setApiKey("Bearer " + token);
-//            }
             repository.getProfile(new DataCallback<UserProfile>() {
                 @Override
                 public void onSuccess(UserProfile data) {
-                    requireActivity().runOnUiThread(() -> onProfileLoaded(data));
+                    if (isAdded()) {
+                        requireActivity().runOnUiThread(() -> onProfileLoaded(data));
+                    }
                 }
 
                 @Override
                 public void onError(String e) {
-                    Log.e("ProfileFragment", "Error loading profile: " + e);
-                    requireActivity().runOnUiThread(() -> onProfileLoadError(e));
+                    if (isAdded()) {
+                        requireActivity().runOnUiThread(() -> onProfileLoadError(e));
+                    }
                 }
             });
-//            } catch (ApiException e) {
-//                Log.e("ProfileFragment", "Error loading profile: " + e.getMessage());
-//                requireActivity().runOnUiThread(() -> onProfileLoadError(e));
-//            }
         }).start();
     }
 
     private void onProfileLoaded(UserProfile profile) {
         currentProfile = profile;
-        originalProfile = cloneProfile(profile);
         storeOriginalValues();
 
         populateUI(profile);
@@ -205,18 +231,7 @@ public class ProfileFragment extends Fragment {
 
     private void onProfileLoadError(String errorMessage) {
         setLoading(false);
-//        String errorMessage = "Ошибка загрузки профиля";
-//        if (e.getCode() == 401) {
-//        errorMessage = "Сессия истекла. Войдите снова.";
         logout();
-//        } else if (e.getResponseBody() != null) {
-//            try {
-//                JSONObject json = new JSONObject(e.getResponseBody());
-//                if (json.has("message")) {
-//                    errorMessage = json.getString("message");
-//                }
-//            } catch (Exception ignored) {}
-//        }
         ViewUtils.toast(requireView(), requireContext(), errorMessage);
         Log.e("ProfileFragment", errorMessage);
     }
@@ -261,12 +276,13 @@ public class ProfileFragment extends Fragment {
             tvRole.setText(roleDisplay);
         }
 
-        // Squad (placeholder as requested)
-        tvSquad.setText("Отряд «Капельки»");
-
-        // Avatar - using placeholder for now
-        // TODO: Load avatar from URL when image loading library is added
-        // if (profile.getAvatar() != null) { Glide.with(this).load(profile.getAvatar()).into(ivAvatar); }
+        // Squad - get from PreferencesHelper (cached from SquadFragment)
+        String squadTitle = preferencesHelper.getSquadTitle();
+        if (squadTitle != null && !squadTitle.isEmpty()) {
+            tvSquad.setText("Отряд «" + squadTitle + "»");
+        } else {
+            tvSquad.setText("Отряд не назначен");
+        }
     }
 
     private String mapRoleToDisplay(UserProfile.RoleEnum role) {
@@ -291,71 +307,69 @@ public class ProfileFragment extends Fragment {
                 || !currentEmail.equals(originalEmail)
                 || !currentPhone.equals(originalPhone);
 
-        btnSaveChanges.setHasChanges(hasChanges);
+        // Requirement 1 & 2 Validation: email must be valid, phone must be empty or complete (18 chars with mask)
+        boolean isEmailValid = isValidEmail(currentEmail);
+        boolean isNameValid = !currentName.isEmpty();
+        boolean isPhoneValid = currentPhone.isEmpty() || currentPhone.length() == 18;
+
+        btnSaveChanges.setHasChanges(hasChanges && isEmailValid && isNameValid && isPhoneValid);
+    }
+
+    private boolean isValidEmail(String email) {
+        return !TextUtils.isEmpty(email) && Patterns.EMAIL_ADDRESS.matcher(email).matches();
     }
 
     private void saveProfile() {
         if (currentProfile == null) return;
 
+        String currentEmail = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
+        if (!isValidEmail(currentEmail)) {
+            tilEmail.setError("Неверный формат почты");
+            return;
+        }
+
+        String currentPhone = etPhone.getText() != null ? etPhone.getText().toString().trim() : "";
+        if (!currentPhone.isEmpty() && currentPhone.length() != 18) {
+            tilPhone.setError("Введите номер полностью");
+            return;
+        }
+
         setLoading(true);
         btnSaveChanges.showLoading();
         setFieldsEnabled(false);
 
-        // Build UserProfile with only changed fields
+        // Build UserProfile with current fields
         UserProfile updateRequest = new UserProfile();
         updateRequest.setId(currentProfile.getId());
-
-        String currentName = etName.getText() != null ? etName.getText().toString().trim() : "";
-        String currentEmail = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
-        String currentPhone = etPhone.getText() != null ? etPhone.getText().toString().trim() : "";
-
-        boolean nameChanged = !currentName.equals(originalName);
-        boolean emailChanged = !currentEmail.equals(originalEmail);
-        boolean phoneChanged = !currentPhone.equals(originalPhone);
-
-        if (nameChanged) updateRequest.setFullName(currentName);
-        if (emailChanged) updateRequest.setEmail(currentEmail);
-        if (phoneChanged) updateRequest.setPhoneNumber(currentPhone);
-
-        // If nothing actually changed (shouldn't happen since button is disabled), just reset
-        if (!nameChanged && !emailChanged && !phoneChanged) {
-            requireActivity().runOnUiThread(() -> {
-                btnSaveChanges.hideLoading(false);
-                setLoading(false);
-                setFieldsEnabled(true);
-            });
-            return;
-        }
+        updateRequest.setFullName(etName.getText().toString().trim());
+        updateRequest.setEmail(currentEmail);
+        updateRequest.setPhoneNumber(currentPhone);
 
         new Thread(() -> {
             ProfileRepository repository = new ProfileRepository(requireContext());
             repository.setProfile(updateRequest, new DataCallback<UserProfile>() {
                 @Override
                 public void onSuccess(UserProfile data) {
-                    requireActivity().runOnUiThread(() -> onProfileSaved(data, nameChanged, emailChanged, phoneChanged));
+                    if (isAdded()) {
+                        requireActivity().runOnUiThread(() -> onProfileSaved(data));
+                    }
                 }
 
                 @Override
                 public void onError(String e) {
-                    requireActivity().runOnUiThread(() -> onProfileSaveError(e));
+                    if (isAdded()) {
+                        requireActivity().runOnUiThread(() -> onProfileSaveError(e));
+                    }
                 }
             });
         }).start();
     }
 
-    private void onProfileSaved(UserProfile updatedProfile, boolean nameChanged, boolean emailChanged, boolean phoneChanged) {
-        // Update current profile with saved data
-        if (nameChanged) currentProfile.setFullName(updatedProfile.getFullName());
-        if (emailChanged) currentProfile.setEmail(updatedProfile.getEmail());
-        if (phoneChanged) currentProfile.setPhoneNumber(updatedProfile.getPhoneNumber());
-
-        // Update original values to match saved state
+    private void onProfileSaved(UserProfile updatedProfile) {
+        currentProfile = updatedProfile;
         storeOriginalValues();
-
-        // Update UI
         populateUI(currentProfile);
 
-        // Reset button state
         btnSaveChanges.hideLoading(false);
         setLoading(false);
         setFieldsEnabled(true);
@@ -364,22 +378,9 @@ public class ProfileFragment extends Fragment {
     }
 
     private void onProfileSaveError(String errorMessage) {
-        btnSaveChanges.hideLoading(true); // Keep changes since save failed
+        btnSaveChanges.hideLoading(true);
         setLoading(false);
         setFieldsEnabled(true);
-
-//        String errorMessage = "Ошибка сохранения";
-//        if (e.getCode() == 401) {
-//            errorMessage = "Сессия истекла. Войдите снова.";
-//            logout();
-//        } else if (e.getResponseBody() != null) {
-//            try {
-//                JSONObject json = new JSONObject(e.getResponseBody());
-//                if (json.has("message")) {
-//                    errorMessage = json.getString("message");
-//                }
-//            } catch (Exception ignored) {}
-//        }
         ViewUtils.toast(requireView(), requireContext(), errorMessage);
     }
 
@@ -410,15 +411,73 @@ public class ProfileFragment extends Fragment {
         btnLogout.setEnabled(enabled);
     }
 
-    private UserProfile cloneProfile(UserProfile profile) {
-        if (profile == null) return null;
-        UserProfile clone = new UserProfile();
-        clone.setId(profile.getId());
-        clone.setFullName(profile.getFullName());
-        clone.setEmail(profile.getEmail());
-        clone.setPhoneNumber(profile.getPhoneNumber());
-        clone.setRole(profile.getRole());
-        clone.setAvatar(profile.getAvatar());
-        return clone;
+    /**
+     * Requirement 2: TextWatcher for Russian phone number formatting: +7 (xxx) xxx-xx-xx
+     */
+    private static class PhoneTextWatcher implements TextWatcher {
+        private final TextInputEditText editText;
+        private boolean isUpdating = false;
+
+        public PhoneTextWatcher(TextInputEditText editText) {
+            this.editText = editText;
+        }
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+        @Override
+        public void afterTextChanged(Editable s) {
+            if (isUpdating) return;
+            isUpdating = true;
+
+            String digits = s.toString().replaceAll("\\D", "");
+
+            // If user typed 7 or 8 at the start, treat it as the country code and skip it
+            if (digits.startsWith("7") || digits.startsWith("8")) {
+                digits = digits.substring(1);
+            }
+
+            // Limit to 10 digits (after country code)
+            if (digits.length() > 10) {
+                digits = digits.substring(0, 10);
+            }
+
+            StringBuilder formatted = new StringBuilder();
+            if (digits.length() > 0) {
+                formatted.append("+7 (");
+                formatted.append(digits.substring(0, Math.min(digits.length(), 3)));
+                
+                if (digits.length() >= 3) {
+                    formatted.append(") ");
+                }
+                
+                if (digits.length() > 3) {
+                    formatted.append(digits.substring(3, Math.min(digits.length(), 6)));
+                }
+                
+                if (digits.length() >= 6) {
+                    formatted.append("-");
+                }
+                
+                if (digits.length() > 6) {
+                    formatted.append(digits.substring(6, Math.min(digits.length(), 8)));
+                }
+                
+                if (digits.length() >= 8) {
+                    formatted.append("-");
+                }
+                
+                if (digits.length() > 8) {
+                    formatted.append(digits.substring(8, Math.min(digits.length(), 10)));
+                }
+            }
+
+            editText.setText(formatted.toString());
+            editText.setSelection(formatted.length());
+            isUpdating = false;
+        }
     }
 }
