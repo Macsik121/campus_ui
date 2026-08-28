@@ -16,4 +16,24 @@
     <string name="notification_error">Ошибка при обновлении уведомлений</string>
     <string name="loading_notifications">Загрузка уведомлений…</string>
     <string name="notifications_page_title">Страница - Отображаются уведомления</string>
+
+    <!-- Squad Log / Journal -->
+    <string name="journal_title">Журнал отряда</string>
+    <string name="filter_date_label">Дата:</string>
+    <string name="select_date_hint">Выбрать дату</string>
+    <string name="calendar_icon_desc">Календарь</string>
+    <string name="attendance_title">Посещаемость</string>
+    <string name="attendance_count_format">Присутствует: %d/%d</string>
+    <string name="attendance_not_selected">Присутствует: не выбрана активность</string>
+    <string name="activities_title">Активности</string>
+    <string name="loading_journal">Загрузка журнала…</string>
+    <string name="error_loading_journal">Ошибка при загрузке журнала</string>
+    <string name="error_loading_children">Ошибка при загрузке детей</string>
+    <string name="error_loading_events">Ошибка при загрузке мероприятий</string>
+    <string name="error_loading_attendance">Ошибка при загрузке посещаемости</string>
+    <string name="error_marking_attendance">Ошибка при отметке посещаемости</string>
+    <string name="attendance_marked_present">Ребёнок отмечен как присутствующий</string>
+    <string name="attendance_marked_absent">Ребёнок отмечен как отсутствующий</string>
+    <string name="no_children">В отряде нет детей</string>
+    <string name="no_events">Мероприятий нет</string>
 </resources>

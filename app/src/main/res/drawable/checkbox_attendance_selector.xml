@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Checked (present) - green checkmark -->
+    <item android:drawable="@drawable/ic_check_green" android:state_checked="true" />
+    <!-- Unchecked (absent) - red X -->
+    <item android:drawable="@drawable/ic_close_red" android:state_checked="false" />
+</selector>

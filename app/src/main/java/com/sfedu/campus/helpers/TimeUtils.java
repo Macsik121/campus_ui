@@ -99,6 +99,14 @@ public class TimeUtils {
     }
 
     /**
+     * Форматирует время в формате HH:mm
+     */
+    public static String formatTime(OffsetDateTime dateTime) {
+        if (dateTime == null) return "";
+        return dateTime.atZoneSameInstant(ZoneId.systemDefault()).toLocalTime().format(TIME_FORMAT);
+    }
+
+    /**
      * Вспомогательный метод для склонения существительных после числительных
      */
     private static String getRussianPlural(long n, String one, String two, String five) {

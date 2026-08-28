@@ -37,6 +37,10 @@ public class ViewUtils {
         button.setCornerRadius(radiusInPx);
     }
     public static void toast(View view, Context context, String text) {
+        showSnackbar(view, text);
+    }
+
+    public static void showSnackbar(View view, String text) {
 //        activity.runOnUiThread(() -> {
 //            Toast.makeText(context, text, Toast.LENGTH_LONG).show();
 //        });
@@ -45,7 +49,7 @@ public class ViewUtils {
         View snackbarView = snackbar.getView();
         TextView snackbarText = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
 
-        Drawable icon = ContextCompat.getDrawable(context, R.drawable.campus_logo);
+        Drawable icon = ContextCompat.getDrawable(view.getContext(), R.drawable.campus_logo);
         if (icon != null) {
             icon.setBounds(0, 0, 58, 58);
 
