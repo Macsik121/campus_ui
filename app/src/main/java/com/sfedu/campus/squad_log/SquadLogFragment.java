@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -102,7 +103,9 @@ public class SquadLogFragment extends Fragment
         eventsRecyclerView = view.findViewById(R.id.events_recycler_view);
         progressBar = view.findViewById(R.id.progress_bar);
         loadingOverlay = view.findViewById(R.id.loading_overlay);
+        LinearLayout llSquadLogDatePicker = view.findViewById(R.id.ll_squad_log_date_picker);
 
+        datePicker.setEnabled(false);
         // Initialize repository
         repository = new SquadLogRepository(requireContext());
 
@@ -122,7 +125,7 @@ public class SquadLogFragment extends Fragment
         eventsRecyclerView.setAdapter(eventAdapter);
 
         // Setup calendar icon click
-        calendarIcon.setOnClickListener(v -> datePicker.showDropDown());
+        llSquadLogDatePicker.setOnClickListener(v -> datePicker.showDropDown());
 
         // Load initial data
         loadChildren();
@@ -282,7 +285,7 @@ public class SquadLogFragment extends Fragment
         // Freeze checkbox during request
         childAdapter.setActivitySelected(false);
 
-        repository.updateAttendance(selectedEventId, child.getId(), new DataCallback<com.sfedu.campus.generated.model.UpdateAttendanceResponse>() {
+        repository.updateAttendance(selectedEventId, child.getId(), isPresent, new DataCallback<com.sfedu.campus.generated.model.UpdateAttendanceResponse>() {
             @Override
             public void onSuccess(com.sfedu.campus.generated.model.UpdateAttendanceResponse response) {
                 requireActivity().runOnUiThread(() -> {

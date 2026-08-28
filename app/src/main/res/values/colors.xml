@@ -3,5 +3,5 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <!-- Transparent blue for unread notifications -->
-    <color name="unread_background">#332196F3</color>
+    <color name="unread_background">#15008AFF</color>
 </resources>

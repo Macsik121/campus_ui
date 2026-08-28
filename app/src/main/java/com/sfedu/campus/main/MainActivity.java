@@ -2,6 +2,7 @@ package com.sfedu.campus.main;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -79,12 +80,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        switchFragment(R.id.nav_squad, false);
+//        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+//        SquadFragment targetFragment = new SquadFragment();
+//        transaction.replace(R.id.fragment_container, targetFragment, String.valueOf(R.id.nav_squad));
+//        transaction.commit();
 
+        switchFragment(R.id.nav_squad, true, true);
         // Слушатель нажатий на нижнюю навигацию
         // new BottomNavigationView.OnItemSelectedListener() - can be replaced with lambda: item ->
         bottomNavigationView.setOnItemSelectedListener(item -> {
-            switchFragment(item.getItemId(), true);
+            switchFragment(item.getItemId(), true, false);
             return true;
         });
     }
@@ -93,46 +98,50 @@ public class MainActivity extends AppCompatActivity {
      * @param navItemId ID пункта меню
      * @param addToBackStack нужно ли добавлять в стек (для кнопки Назад)
      */
-    private void switchFragment(int navItemId, boolean addToBackStack) {
+    private void switchFragment(int navItemId, boolean addToBackStack, boolean firstTime) {
         // Если нажали на тот же самый раздел - ничего не делаем
-        if (currentNavItemId == navItemId) return;
+        Log.e("MainActivity", currentNavItemId + " " + navItemId);
+        if ((currentNavItemId == navItemId) && !firstTime) return;
 
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
 
+        Log.i("MainActivity", "switchFragment: targetFragment=" + transaction.toString() + ",");
         // 1. Скрываем текущий фрагмент (если он есть)
-        Fragment currentFragment = fragmentMap.get(currentNavItemId);
-        if (currentFragment != null && currentFragment.isAdded()) {
-            transaction.hide(currentFragment);
-        }
+//        Fragment currentFragment = fragmentMap.get(currentNavItemId);
+//        if (currentFragment != null && currentFragment.isAdded()) {
+//            transaction.hide(currentFragment);
+//        }
 
         // 2. Получаем или создаем новый фрагмент по ID
-        Fragment targetFragment = fragmentMap.get(navItemId);
-        if (targetFragment == null) {
-            if (navItemId == R.id.nav_squad) {
-                targetFragment = new SquadFragment();
-            } else if (navItemId == R.id.nav_notifications) {
-                targetFragment = new NotificationFragment();
-            } else if (navItemId == R.id.nav_map) {
-                targetFragment = new MapFragment();
-            } else if (navItemId == R.id.nav_squad_log) {
-                targetFragment = new SquadLogFragment();
-            } else if (navItemId == R.id.nav_profile) {
-                targetFragment = new ProfileFragment();
-            } else {
-                return; // Если ID не совпадает ни с одним пунктом - прерываем
-            }
-
-            fragmentMap.put(navItemId, targetFragment);
+//        Fragment targetFragment = fragmentMap.get(navItemId);
+        Fragment targetFragment;
+//        if (targetFragment == null) {
+        if (navItemId == R.id.nav_squad) {
+            targetFragment = new SquadFragment();
+        } else if (navItemId == R.id.nav_notifications) {
+            targetFragment = new NotificationFragment();
+        } else if (navItemId == R.id.nav_map) {
+            targetFragment = new MapFragment();
+        } else if (navItemId == R.id.nav_squad_log) {
+            targetFragment = new SquadLogFragment();
+        } else if (navItemId == R.id.nav_profile) {
+            targetFragment = new ProfileFragment();
+        } else {
+            return; // Если ID не совпадает ни с одним пунктом - прерываем
         }
+
+//            fragmentMap.put(navItemId, targetFragment);
+//        }
 
         // 3. Проверяем, добавлен ли фрагмент в контейнер
-        if (!targetFragment.isAdded()) {
+//        if (!targetFragment.isAdded()) {
             // Если нет - добавляем
-            transaction.add(R.id.fragment_container, targetFragment, String.valueOf(navItemId));
-        } else {
-            // Если уже был добавлен (но скрыт) - просто показываем
-            transaction.show(targetFragment);
-        }
+        transaction.replace(R.id.fragment_container, targetFragment, String.valueOf(navItemId));
+        Log.i("MainActivity", "switchFragment: targetFragment=" + targetFragment.toString() + ",");
+//        } else {
+//            // Если уже был добавлен (но скрыт) - просто показываем
+//            transaction.show(targetFragment);
+//        }
 
         // 4. Сохраняем текущий ID
         currentNavItemId = navItemId;

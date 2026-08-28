@@ -65,11 +65,12 @@ public class SquadLogRepository {
         }).start();
     }
 
-    public void updateAttendance(UUID eventId, UUID childId, DataCallback<UpdateAttendanceResponse> callback) {
+    public void updateAttendance(UUID eventId, UUID childId, boolean isPresent, DataCallback<UpdateAttendanceResponse> callback) {
         new Thread(() -> {
             try {
                 UpdateAttendanceRequest request = new UpdateAttendanceRequest();
                 request.setChildId(childId);
+                request.setPresent(isPresent);
                 UpdateAttendanceResponse response = journalApi.updateAttendance(eventId, request);
                 callback.onSuccess(response);
             } catch (ApiException e) {

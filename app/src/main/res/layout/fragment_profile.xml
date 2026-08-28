@@ -239,7 +239,6 @@
 
         <!-- Footer -->
         <TextView
-            android:id="@+id/tv_footer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"

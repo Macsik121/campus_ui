@@ -1,5 +1,11 @@
 package com.sfedu.campus.notifications;
 
+import static androidx.core.content.ContentProviderCompat.requireContext;
+
+import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.sfedu.campus.R;
@@ -65,7 +72,6 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         private final TextView notificationDescription;
         private final TextView notificationTime;
         private final Button readButton;
-
         NotificationViewHolder(@NonNull View itemView) {
             super(itemView);
             cardView = itemView.findViewById(R.id.notification_card);
@@ -75,6 +81,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
             notificationDescription = itemView.findViewById(R.id.notification_description);
             notificationTime = itemView.findViewById(R.id.notification_time);
             readButton = itemView.findViewById(R.id.read_button);
+
         }
 
         void bind(Notification notification, int position) {
@@ -90,17 +97,25 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
 
             // Set read/unread styling
             boolean isRead = notification.getIsRead() != null && notification.getIsRead();
+            GradientDrawable gd = new GradientDrawable();
+            gd.setCornerRadius(23);
+            gd.setStroke(2, Color.WHITE);
+            Context context = cardView.getContext();
+            int colorInt;
+
             if (isRead) {
                 // Read: white background, no left border
-                cardView.setBackgroundResource(android.R.color.white);
+                colorInt = ContextCompat.getColor(context, R.color.white);
                 unreadLeftBorder.setVisibility(View.GONE);
                 readButton.setVisibility(View.GONE);
             } else {
                 // Unread: transparent blue background with blue left border
-                cardView.setBackgroundResource(R.color.unread_background);
+                colorInt = ContextCompat.getColor(context, R.color.unread_background);
                 unreadLeftBorder.setVisibility(View.VISIBLE);
                 readButton.setVisibility(View.VISIBLE);
             }
+            gd.setColor(colorInt);
+            cardView.setBackground(gd);
 
             // Set read button click listener
             readButton.setOnClickListener(v -> {
@@ -112,7 +127,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
 
         private void setNotificationIcon(String title) {
             if (title == null) {
-                notificationIcon.setImageResource(R.drawable.ic_notification_info);
+                notificationIcon.setImageResource(R.drawable.notification);
                 return;
             }
 
@@ -122,10 +137,10 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
             } else if (lowerTitle.contains("важно") || lowerTitle.contains("important") || lowerTitle.contains("экстрен") || lowerTitle.contains("срочн")) {
                 notificationIcon.setImageResource(R.drawable.ic_notification_important);
             } else if (lowerTitle.contains("информ") || lowerTitle.contains("объявлен") || lowerTitle.contains("info") || lowerTitle.contains("announce")) {
-                notificationIcon.setImageResource(R.drawable.ic_notification_bell);
+                notificationIcon.setImageResource(R.drawable.notification);
             } else {
                 // Default to bell for general notifications
-                notificationIcon.setImageResource(R.drawable.ic_notification_bell);
+                notificationIcon.setImageResource(R.drawable.notification);
             }
         }
     }

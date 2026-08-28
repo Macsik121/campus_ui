@@ -15,14 +15,14 @@
         android:padding="16dp">
 
         <!-- Child Photo -->
-        <de.hdodenhof.circleimageview.CircleImageView
-            android:id="@+id/iv_child_photo"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:src="@drawable/ic_child_placeholder"
-            android:contentDescription="Фото ребёнка"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"/>
+<!--        <de.hdodenhof.circleimageview.CircleImageView-->
+<!--            android:id="@+id/iv_child_photo"-->
+<!--            android:layout_width="64dp"-->
+<!--            android:layout_height="64dp"-->
+<!--            android:src="@drawable/ic_child_placeholder"-->
+<!--            android:contentDescription="Фото ребёнка"-->
+<!--            app:layout_constraintTop_toTopOf="parent"-->
+<!--            app:layout_constraintStart_toStartOf="parent"/>-->
 
         <!-- Child Name -->
         <TextView
@@ -38,7 +38,6 @@
             android:ellipsize="end"
             android:maxLines="1"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toEndOf="@id/iv_child_photo"
             app:layout_constraintEnd_toStartOf="@id/tv_child_age"/>
 
         <!-- Child Age -->
@@ -68,7 +67,6 @@
             android:orientation="horizontal"
             android:gravity="center_vertical"
             app:layout_constraintTop_toBottomOf="@id/tv_child_name"
-            app:layout_constraintStart_toEndOf="@id/iv_child_photo"
             app:layout_constraintEnd_toEndOf="parent">
 
             <ImageView
@@ -112,13 +110,12 @@
             android:orientation="horizontal"
             android:gravity="center_vertical"
             app:layout_constraintTop_toBottomOf="@id/ll_parent_name"
-            app:layout_constraintStart_toEndOf="@id/iv_child_photo"
             app:layout_constraintEnd_toEndOf="parent">
 
             <ImageView
                 android:layout_width="18dp"
                 android:layout_height="18dp"
-                android:src="@drawable/ic_phone"
+                android:src="@drawable/telephone"
                 app:tint="#757575"
                 android:contentDescription=""/>
 
@@ -156,12 +153,12 @@
             android:visibility="gone"
             app:singleLine="false"
             app:layout_constraintTop_toBottomOf="@id/ll_parent_phone"
-            app:layout_constraintStart_toEndOf="@id/iv_child_photo"
             app:layout_constraintEnd_toEndOf="parent"/>
+<!--        app:layout_constraintStart_toEndOf="@id/iv_child_photo"-->
 
         <!-- Notes -->
         <LinearLayout
-            android:id="@+id/ll_notes"
+            android:id="@+id/ll_child_notes"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -171,7 +168,6 @@
             android:orientation="horizontal"
             android:gravity="center_vertical"
             app:layout_constraintTop_toBottomOf="@id/cg_tags"
-            app:layout_constraintStart_toEndOf="@id/iv_child_photo"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent">
 

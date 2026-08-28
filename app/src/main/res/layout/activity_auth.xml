@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout android:id="@+id/auth_activity_layout"
-    android:layout_width="match_parent"
+<LinearLayout android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/auth_forms_gradient_bg"
     android:padding="20dp"
@@ -30,7 +29,6 @@
                 android:layout_margin="0dp" />
             <!-- Заголовок -->
             <TextView
-                android:id="@+id/h1_title"
                 android:text="Лагерь - Вожатый\nПриложение для управления отрядом"
                 android:textAlignment="center"
                 android:textSize="20sp"

@@ -33,6 +33,7 @@
                 android:textColor="?attr/colorOnSurface" />
 
             <LinearLayout
+                android:id="@+id/ll_squad_log_date_picker"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
@@ -149,7 +150,6 @@
 
     <!-- Activities Block -->
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/activities_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"

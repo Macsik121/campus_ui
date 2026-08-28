@@ -1,0 +1,482 @@
+Context
+
+Creating a professional presentation for the Samsung Innovation Campus "Technology of Mobile Development" program to showcase the CAMPUS project - a comprehensive mobile application for managing pedagogical squads (отряды), children, events, and notifications in summer camp settings.
+
+Goal: Present a technically accurate, visually compelling demonstration of all implemented features, technologies used, and architectural approaches.
+
+Audience: Samsung evaluators, mentors, and peers - technical depth appropriate for mobile development professionals.
+
+---
+
+Presentation Format: Interactive HTML Artifact
+
+- Self-contained HTML file with embedded Mermaid.js for diagrams
+- Responsive design with dark/light theme support
+- Navigation controls (prev/next, slide counter)
+- Speaker notes for each slide
+- Samsung-branded aesthetic (professional, corporate-ready)
+
+---
+
+Presentation Structure (18 Slides)
+
+Slide 1: Title Slide
+
+- Title: CAMPUS — Comprehensive Administration and Management Platform for Unified Supervision
+- Subtitle: Система управления педагогическими отрядами для детских лагерей
+- Program: Samsung Innovation Campus "Technology of Mobile Development"
+- Team: [Название команды]
+- Date: 2026
+
+Slide 2: Проблематика и мотивация
+
+- Ручное управление отрядами и детьми в лагерях — трудоёмко и ошибочно
+- Необходимость отслеживания посещаемости, уведомлений, геолокации в реальном времени
+- Ролевая модель: вожатые, старшие вожатые, директора — разные права доступа
+- Реальная польза: безопасность, порядок, эффективность работы смены
+
+Slide 3: Обзор решения
+
+- Full-stack мобильное приложение: REST API + Нативный Android-клиент
+- 5 основных экранов: Отряд, Журнал, Уведомления, Карта, Профиль
+- 3 роли пользователей с прогрессивными правами доступа
+- Offline-first UX с кэшированием в SharedPreferences
+
+Slide 4: Архитектура системы (C4 Level 1)
+
+mermaid
+C4Context
+title Контекстная диаграмма — CAMPUS
+
+Person(counselor, "Вожатый", "Управляет отрядом")
+Person(senior, "Старший вожатый", "Управляет несколькими отрядами")
+Person(director, "Директор", "Наблюдает за всеми операциями")
+
+System_Boundary(campus, "Система CAMPUS") {
+    System(android, "Android App", "Java + XML, Material Design 3")
+    System(api, "REST API", "Node.js + Express + PostgreSQL")
+    SystemDb(db, "PostgreSQL", "Реляционная БД с UUID PK")
+}
+
+Rel(counselor, android, "Использует", "HTTPS/REST")
+Rel(senior, android, "Использует", "HTTPS/REST")
+Rel(director, android, "Использует", "HTTPS/REST")
+Rel(android, api, "API вызовы", "HTTPS/JSON + JWT")
+Rel(api, db, "Чтение/Запись", "SQL")
+
+Slide 5: Технологический стек
+
+┌───────────────────┬────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│       Слой        │                                               Технологии                                               │
+├───────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Frontend          │ Java 17, Android SDK 34, XML Layouts, Material Components 1.12, Retrofit 2, OkHttp 4, Gson,            │
+│ (Android)         │ CircleImageView 3.1                                                                                    │
+├───────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Backend (API)     │ Node.js, Express.js, PostgreSQL, JWT (jsonwebtoken), bcrypt, Swagger/OpenAPI 2.0, ESLint               │
+├───────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Архитектура       │ RESTful API, Repository Pattern (Android), MVVM-ish, Generated API Client из OpenAPI                   │
+├───────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Безопасность      │ JWT stateless auth, bcrypt хеширование паролей, Role-based middleware, Валидация ввода                 │
+├───────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Инструменты       │ Git, Postman, OpenAPI Generator 7.10, Android Studio                                                   │
+└───────────────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+Slide 6: API Design — RESTful Architecture
+
+- Base Path: /api/v1
+- 6 доменных роутеров:
+  a. /auth — Авторизация и регистрация
+  b. /squads — Управление отрядами (только senior+)
+  c. /children — CRUD детей + система тегов
+  d. /notifications — Система уведомлений
+  e. /events — Журнал мероприятий и посещаемость
+  f. /users — Профиль и назначение на отряды
+- Цепочка middleware: authMiddleware → logger.middleware → verifySeniorCounselourRights (где нужно)
+- OpenAPI 2.0 Spec: 972 строки, встроенная бизнес-логика, 50+ эндпоинтов
+
+Slide 7: Дизайн БД (ER Diagram из uml_entities.sql)
+
+mermaid
+erDiagram
+    USERS ||--o{ USERS_IN_SQUADS : "assigned to"
+    USERS {
+        UUID id PK
+        VARCHAR fullName
+        VARCHAR email UK
+        TEXT password
+        VARCHAR phoneNumber
+        TEXT avatar
+        ENUM role "counselour, senior_counselour, director"
+    }
+    SQUADS ||--o{ USERS_IN_SQUADS : "has"
+    SQUADS {
+        UUID id PK
+        VARCHAR title
+        TEXT description
+    }
+    SQUADS ||--o{ CHILDREN : "contains"
+    CHILDREN {
+        UUID id PK
+        UUID squadId FK
+        VARCHAR fullName
+        VARCHAR age
+        VARCHAR parentFullName
+        VARCHAR parentPhone
+        TEXT notes
+    }
+    CHILDREN ||--o{ CHILD_TAGS : "tagged with"
+    CHILD_TAGS {
+        UUID id PK
+        UUID childId FK
+        ENUM tagType "warning, alert, health, sports"
+        TEXT tagInfo
+    }
+    EVENTS ||--o{ ATTENDANCE : "tracks"
+    EVENTS {
+        UUID id PK
+        UUID squadId FK
+        VARCHAR title
+        TEXT description
+        TIMESTAMP timeFrom
+        TIMESTAMP timeTo
+    }
+    ATTENDANCE {
+        UUID id PK
+        UUID eventId FK
+        UUID childId FK
+        BOOLEAN isPresent
+    }
+    NOTIFICATIONS ||--o{ NOTIFICATIONS_READ_BY_USERS : "read by"
+    NOTIFICATIONS {
+        UUID id PK
+        VARCHAR title
+        TEXT description
+        TIMESTAMP sentAt
+    }
+    ACTION_LOGS {
+        UUID id PK
+        UUID causedBy FK
+        TEXT log
+        TIMESTAMP createdAt
+    }
+
+Slide 8: Поток аутентификации и авторизации
+
+mermaid
+sequenceDiagram
+    participant Client as Android App
+    participant API as REST API
+    participant DB as PostgreSQL
+
+    Client->>API: POST /auth/login {email, password}
+    API->>DB: SELECT * FROM users WHERE email=?
+    DB-->>API: Запись пользователя (хеш пароля)
+    API->>API: bcrypt.compare(password, hash)
+    alt Valid credentials
+        API->>API: jwt.sign({userId, role}, JWT_SECRET, {expiresIn: '7d'})
+        API-->>Client: 200 OK {token}
+        Client->>Client: Сохранить токен в SharedPreferences
+    else Invalid
+        API-->>Client: 401 Unauthorized
+    end
+
+    Note over Client,API: Последующие запросы
+    Client->>API: GET /api/v1/users/profile\nAuthorization: Bearer <token>
+    API->>API: jwt.verify(token, JWT_SECRET)
+    alt Valid token
+        API->>DB: SELECT * FROM users WHERE id=?
+        API-->>Client: 200 OK {profile}
+    else Invalid/Expired
+        API-->>Client: 401 Unauthorized
+    end
+
+Slide 9: Ролевая модель доступа (RBAC)
+
+┌──────────────────────────────────┬──────────────────────┬─────────────────────────────────────┬─────────────────────┐
+│             Функция              │ Вожатый (counselour) │ Старший вожатый (senior_counselour) │ Директор (director) │
+├──────────────────────────────────┼──────────────────────┼─────────────────────────────────────┼─────────────────────┤
+│ Просмотр своих детей в отряде    │ ✅                   │ ✅                                  │ ✅                  │
+├──────────────────────────────────┼──────────────────────┼─────────────────────────────────────┼─────────────────────┤
+│ Редактирование заметок о ребёнке │ ✅                   │ ✅                                  │ ✅                  │
+├──────────────────────────────────┼──────────────────────┼─────────────────────────────────────┼─────────────────────┤
+│ Отметка посещаемости             │ ✅                   │ ✅                                  │ ✅                  │
+├──────────────────────────────────┼──────────────────────┼─────────────────────────────────────┼─────────────────────┤
+│ Просмотр уведомлений             │ ✅                   │ ✅                                  │ ✅                  │
+├──────────────────────────────────┼──────────────────────┼─────────────────────────────────────┼─────────────────────┤
+│ Редактирование своего профиля    │ ✅                   │ ✅                                  │ ✅                  │
+├──────────────────────────────────┼──────────────────────┼─────────────────────────────────────┼─────────────────────┤
+│ Создание отрядов                 │ ❌                   │ ✅                                  │ ✅                  │
+├──────────────────────────────────┼──────────────────────┼─────────────────────────────────────┼─────────────────────┤
+│ Добавление/удаление детей        │ ❌                   │ ✅                                  │ ✅                  │
+├──────────────────────────────────┼──────────────────────┼─────────────────────────────────────┼─────────────────────┤
+│ Создание мероприятий             │ ❌                   │ ✅                                  │ ✅                  │
+├──────────────────────────────────┼──────────────────────┼─────────────────────────────────────┼─────────────────────┤
+│ Создание уведомлений             │ ❌                   │ ✅                                  │ ✅                  │
+├──────────────────────────────────┼──────────────────────┼─────────────────────────────────────┼─────────────────────┤
+│ Логи действий                    │ ❌                   │ ✅                                  │ ✅                  │
+├──────────────────────────────────┼──────────────────────┼─────────────────────────────────────┼─────────────────────┤
+│ Заявки вожатых                   │ ❌                   │ ✅                                  │ ✅                  │
+├──────────────────────────────────┼──────────────────────┼─────────────────────────────────────┼─────────────────────┤
+│ Статистика (панель)              │ ❌                   │ ❌                                  │ 🔄 (планируется)    │
+└──────────────────────────────────┴──────────────────────┴─────────────────────────────────────┴─────────────────────┘
+
+Slide 10: Архитектура Android — Fragment → Repository → ApiProvider → Generated Client
+
+mermaid
+graph TD
+    subgraph UI_Layer[UI Layer — Фрагменты]
+        SquadFragment[SquadFragment]
+        SquadLogFragment[SquadLogFragment]
+        NotificationFragment[NotificationFragment]
+        ProfileFragment[ProfileFragment]
+        MapFragment[MapFragment]
+    end
+
+    subgraph Domain_Layer[Domain Layer — Репозитории]
+        SquadRepo[SquadRepository]
+        UserRepo[UserRepository]
+        NotifRepo[NotificationRepository]
+        ProfileRepo[ProfileRepository]
+        SquadLogRepo[SquadLogRepository]
+    end
+
+    subgraph Data_Layer[Data Layer]
+        ApiProvider[ApiProvider]
+        GeneratedAPI[Generated Retrofit Client]
+        Preferences[SharedPreferences Cache]
+    end
+
+    subgraph Network[Network]
+        REST_API[REST API /api/v1]
+    end
+
+    SquadFragment --> SquadRepo
+    SquadFragment --> UserRepo
+    SquadLogFragment --> SquadLogRepo
+    NotificationFragment --> NotifRepo
+    ProfileFragment --> ProfileRepo
+
+    SquadRepo --> ApiProvider
+    UserRepo --> ApiProvider
+    NotifRepo --> ApiProvider
+    ProfileRepo --> ApiProvider
+    SquadLogRepo --> ApiProvider
+
+    ApiProvider --> GeneratedAPI
+    ApiProvider --> Preferences
+    GeneratedAPI --> REST_API
+
+Slide 11: Ключевая фича — Управление отрядом и детьми (Отряд)
+
+Реализовано: ✅ Полный CRUD для детей, поиск, редактирование заметок, отображение тегов
+- SquadFragment: RecyclerView с фильтром поиска, карточки детей (ФИО, возраст, контакты родителей, теги, заметки)
+- Диалог редактирования заметок: DataEditWaitButton (активен только при наличии изменений)
+- Кэширование: SharedPreferences хранит squadId, squadTitle, список детей для офлайн-доступа
+- API Эндпоинты:
+  - GET /users/squad → проверка назначения на отряд
+  - GET /squads/{squadId}/children → получение детей с тегами
+  - PUT /children/{id} → обновление только заметок
+
+Slide 12: Ключевая фича — Журнал и посещаемость (Журнал)
+
+Реализовано: ✅ Календарная фильтрация событий, отметка посещаемости, синхронизация в реальном времени
+- SquadLogFragment: Два RecyclerView (дети + события), MaterialAutoCompleteTextView выбор даты (±30 дней)
+- Логика фильтра дат:
+  - Будущая дата: события между [сегодня, выбранная]
+  - Прошлая дата: события между [выбранная, сегодня]
+  - Полное вхождение: event.timeFrom > left AND event.timeTo < right
+- Поток посещаемости: Выбор события → загрузка посещаемости → переключение чекбоксов → POST /attendance → оптимистичное обновление UI с откатом при ошибке
+- API Эндпоинты:
+  - GET /events?limit=10 + фильтр по дате
+  - GET /attendance?eventId={uuid}
+  - POST /attendance {eventId, childId, isPresent}
+
+Slide 13: Ключевая фича — Система уведомлений (Уведомления)
+
+Реализовано: ✅ Список со статусами прочитано/непрочитано, индивидуальное и массовое "прочитано", иконки типов
+- NotificationFragment: RecyclerView с иконками типов (метка карты, колокольчик, восклицание), относительное время
+- Отображение времени: <1мин → секунды, <1ч → минуты, <1дня → часы, <30дней → дни, ≥30дней → дд.ММ.гггг
+- UI States: Непрочитано = синий фон + левая граница, Прочитано = белый
+- API Эндпоинты:
+  - GET /notifications?limit=20
+  - POST /notifications/read-notif {notifId}
+  - POST /notifications/read-all
+
+Slide 14: Ключевая фича — Управление профилем (Профиль)
+
+Реализовано: ✅ Редактируемые поля с валидацией, форматирование телефона, выход
+- ProfileFragment: CircleImageView аватар, отображение роли (маппинг из enum), название отряда из кэша
+- Валидация:
+  - Email: regex Patterns.EMAIL_ADDRESS
+  - Телефон: Кастомный PhoneTextWatcher с маской +7 (xxx) xxx-xx-xx
+  - Имя: Обязательное, непустое
+- DataEditWaitButton: Неактивен до появления валидных изменений
+- API Эндпоинты:
+  - GET /users/profile
+  - PUT /users/profile {fullName, email, phoneNumber}
+
+Slide 15: Карта и будущие фичи (Карта)
+
+Статус: 🔄 Планируется / В разработке
+- Требования: Отслеживание геолокации детей в реальном времени через WebSocket (socket.io)
+- Текущее: MapFragment — базовая структура-заглушка
+- Точки интеграции WebSocket (проектированы, не реализованы):
+  - Уведомления: Push в реальном времени при действиях senior/director
+  - Карта: Живые обновления координат (lat/long) по интервалу или при изменении
+  - Чат: Групповые сообщения (MVP: одна комната, Full: каналы по отрядам)
+- Архитектура готова: Паттерн интерцептора ApiProvider поддерживает WebSocket upgrade
+
+Slide 16: Качество кода и Developer Experience
+
+- Repository Pattern (Android): Чистое разделение, тестируемость, единственная ответственность
+- Generated API Client: Типобезопасная сеть из OpenAPI spec (OpenAPI Generator 7.10)
+- Обработка ошибок: Паттерн DataCallback, try/catch в фоновых потоках, понятные тосты
+- Состояния загрузки: ProgressBar + overlay, отключение RecyclerView во время запросов
+- Валидация ввода: И клиентская (TextWatcher), и серверная (validation middleware)
+- Логирование: Серверные actionLogs для всех CUD операций (цепочка middleware)
+- Организация кода: Модульные роутеры, общий middleware, утилиты
+
+Slide 17: Реализованные возможности и разрывы с требованиями
+
+┌──────────────────────────────────────────────┬──────────────────┬──────────────────────────────────────────────────────────┐
+│           Требование / Возможность           │      Статус      │                        Примечания                        │
+├──────────────────────────────────────────────┼──────────────────┼──────────────────────────────────────────────────────────┤
+│ ✅ Авторизация (Login/Register/Logout)       │ ✅ Реализовано   │ JWT токены, bcrypt, SharedPreferences, валидация форм    │
+├──────────────────────────────────────────────┼──────────────────┼──────────────────────────────────────────────────────────┤
+│ ✅ Управление отрядом (просмотр, поиск,      │ ✅ Реализовано   │ RecyclerView, кэширование, DataEditWaitButton, теги      │
+│ заметки)                                     │                  │ детей                                                    │
+├──────────────────────────────────────────────┼──────────────────┼──────────────────────────────────────────────────────────┤
+│ ✅ Журнал мероприятий и посещаемость         │ ✅ Реализовано   │ Календарь ±30 дней, фильтрация по дате, отметка          │
+│                                              │                  │ присутствия                                              │
+├──────────────────────────────────────────────┼──────────────────┼──────────────────────────────────────────────────────────┤
+│ ✅ Уведомления (список, чтение, прочитать    │ ✅ Реализовано   │ Иконки типов, относительное время, массовая отметка      │
+│ всё)                                         │                  │                                                          │
+├──────────────────────────────────────────────┼──────────────────┼──────────────────────────────────────────────────────────┤
+│ ✅ Профиль (просмотр, редактирование,        │ ✅ Реализовано   │ Email/Phone валидация, маска телефона, смена пароля      │
+│ валидация)                                   │                  │ (stub)                                                   │
+├──────────────────────────────────────────────┼──────────────────┼──────────────────────────────────────────────────────────┤
+│ ✅ Ролевая модель (3 роли)                   │ ✅ Реализовано   │ counselour, senior_counselour, director в БД и           │
+│                                              │                  │ middleware                                               │
+├──────────────────────────────────────────────┼──────────────────┼──────────────────────────────────────────────────────────┤
+│ ✅ OpenAPI 2.0 спецификация                  │ ✅ Реализовано   │ 972 строки, встроенная бизнес-логика, генерация клиента  │
+├──────────────────────────────────────────────┼──────────────────┼──────────────────────────────────────────────────────────┤
+│ ✅ Middleware цепочка (auth + logging +      │ ✅ Реализовано   │ Раздельное логирование для CUD, проверка прав senior+    │
+│ rights)                                      │                  │                                                          │
+├──────────────────────────────────────────────┼──────────────────┼──────────────────────────────────────────────────────────┤
+│ ❌ Repository Pattern на API                 │ ❌ Не            │ Прямые pool.query в роутерах; планируется для            │
+│                                              │ реализовано      │ масштабируемости                                         │
+├──────────────────────────────────────────────┼──────────────────┼──────────────────────────────────────────────────────────┤
+│ ❌ Экраны старшего вожатого                  │ ❌ Не            │ Создание отрядов, логи действий, заявки вожатых — UI     │
+│                                              │ реализовано      │ отсутствует                                              │
+├──────────────────────────────────────────────┼──────────────────┼──────────────────────────────────────────────────────────┤
+│ ❌ Экраны директора                          │ ❌ Не            │ Панель статистики — запланирована                        │
+│                                              │ реализовано      │                                                          │
+├──────────────────────────────────────────────┼──────────────────┼──────────────────────────────────────────────────────────┤
+│ ❌ WebSocket интеграция                      │ ❌ Не            │ Проектировано для уведомлений, карты, чата               │
+│                                              │ реализовано      │                                                          │
+├──────────────────────────────────────────────┼──────────────────┼──────────────────────────────────────────────────────────┤
+│ 🔄 Экран Карты                               │ 🔄 Заглушка      │ Базовая структура фрагмента существует                   │
+├──────────────────────────────────────────────┼──────────────────┼──────────────────────────────────────────────────────────┤
+│ 🔄 Смена пароля                              │ 🔄 Stub          │ UI кнопка есть, бэкенд эндпоинт отсутствует              │
+├──────────────────────────────────────────────┼──────────────────┼──────────────────────────────────────────────────────────┤
+│ ❌ Push-уведомления (FCM)                    │ ❌ Не            │ Планируется интеграция                                   │
+│                                              │ реализовано      │                                                          │
+└──────────────────────────────────────────────┴──────────────────┴──────────────────────────────────────────────────────────┘
+
+Slide 18: Выводы и план развития
+
+Ключевые технические решения:
+- Паттерн hide/show фрагментов сохраняет состояние (вместо replace)
+- SharedPreferences кэширование даёт offline-first UX
+- OpenAPI-generated client убирает ручной маппинг DTO
+- Ролевая middleware цепочка сохраняет роутеры чистыми
+
+Roadmap:
+1. Ближайшее: Экраны старшего вожатого (управление отрядами, логи, заявки)
+2. Краткосрочное: Панель статистики директора, WebSocket для уведомлений
+3. Среднесрочное: Карта с живыми локациями, система чата
+4. Долгосрочное: Push-уведомления (FCM), очередь офлайн-синхронизации, мульти-лагерей
+
+---
+
+Visual Design Guidelines
+
+Color Palette (Samsung-inspired)
+
+:root {
+  --samsung-blue: #1428A0;
+  --samsung-dark-blue: #0D1B6B;
+  --samsung-light-blue: #E8EBFF;
+  --white: #FFFFFF;
+  --gray-100: #F5F5F5;
+  --gray-900: #1A1A1A;
+  --success: #00C853;
+  --warning: #FFD600;
+  --error: #FF1744;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #0F0F0F;
+    --bg-secondary: #1A1A1A;
+    --text-primary: #FFFFFF;
+    --text-secondary: #B0B0B0;
+  }
+}
+
+Typography
+
+- Headings: System UI / -apple-system / Roboto (Samsung One UI style)
+- Code: 'JetBrains Mono', 'Fira Code', monospace
+- Body: System UI, 16px base, 1.6 line-height
+
+Slide Layout
+
+- Aspect Ratio: 16:9 (1920x1080 equivalent)
+- Safe Margins: 80px all sides
+- Visual Hierarchy: Clear heading → supporting content → diagram/code
+- Speaker Notes: Hidden panel accessible via 'N' key
+
+---
+
+Implementation Approach
+
+Files to Create
+
+1. Single HTML Artifact: campus-samsung-presentation.html with:
+   - Embedded CSS (no external dependencies except Mermaid.js CDN)
+   - Embedded JavaScript for navigation, theme toggle, speaker notes
+   - Mermaid diagrams rendered client-side
+   - All 18 slides as <section> elements
+
+Reusable Components
+
+- Slide template with consistent header/footer
+- Mermaid diagram containers with fallback static images
+- Code snippet component with syntax highlighting (Prism.js embedded)
+- Table component with responsive scroll
+- Progress indicator (slide X of 18)
+
+Verification Checklist
+
+- [ ] All API endpoints match actual api.yaml and router implementations
+- [ ] Android class names match actual Fragment/Repository names
+- [ ] Role terminology: counselour, senior_counselour, director (exact from code)
+- [ ] Database relationships match uml_entities.sql foreign keys
+- [ ] Code snippets are real (extracted from actual files)
+- [ ] Samsung Innovation Campus context included
+- [ ] Technical depth appropriate for mobile dev evaluators
+- [ ] Diagrams render correctly in browser
+- [ ] Speaker notes included for all slides
+- [ ] Dark/light theme toggle works
+- [ ] Keyboard navigation (arrows, space, N for notes)
+
+---
+
+Output Deliverable
+
+Primary: Interactive HTML artifact published via Artifact tool
+Secondary: Markdown version for documentation/version control
+
+File Location: Scratchpad directory → publish as Artifact
+Title: "CAMPUS - Samsung Innovation Campus Presentation"
+Description: "Full-stack mobile app for pedagogical squad management - Technical defense presentation"

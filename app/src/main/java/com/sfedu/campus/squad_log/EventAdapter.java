@@ -1,5 +1,8 @@
 package com.sfedu.campus.squad_log;
 
+import android.content.Context;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -109,9 +112,17 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             selectedIndicator.setVisibility(isSelected ? View.VISIBLE : View.GONE);
 
             // Highlight selected item
-            itemView.setBackgroundColor(isSelected ?
-                itemView.getContext().getColor(android.R.color.holo_blue_light) :
-                android.graphics.Color.TRANSPARENT);
+
+            GradientDrawable gd = new GradientDrawable();
+            gd.setCornerRadius(20);
+            gd.setStroke(2, Color.BLACK);
+            Context context = itemView.getContext();
+            int colorInt = isSelected ?
+                    itemView.getContext().getColor(R.color.unread_background):
+                    android.graphics.Color.TRANSPARENT;
+
+            gd.setColor(colorInt);
+            itemView.setBackground(gd);
 
             // Click listener
             itemView.setOnClickListener(v -> {

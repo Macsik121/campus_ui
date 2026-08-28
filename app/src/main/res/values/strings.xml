@@ -1,20 +1,15 @@
 <resources>
     <string name="app_name">CAMPUS</string>
     <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
 
     <!-- Notifications -->
     <string name="notification_type_icon">Notification type icon</string>
     <string name="unread_count_format">Непрочитано: %d</string>
     <string name="read_all_button">Прочитать всё</string>
     <string name="read_button">Прочитано</string>
-    <string name="notification_type_map">Перемещение по карте</string>
-    <string name="notification_type_info">Информационное объявление</string>
-    <string name="notification_type_important">Важное объявление</string>
     <string name="notification_read_success">Уведомление отмечено как прочитанное</string>
     <string name="notification_read_all_success">Все уведомления отмечены как прочитанные</string>
     <string name="notification_error">Ошибка при обновлении уведомлений</string>
-    <string name="loading_notifications">Загрузка уведомлений…</string>
     <string name="notifications_page_title">Страница - Отображаются уведомления</string>
 
     <!-- Squad Log / Journal -->
@@ -26,8 +21,6 @@
     <string name="attendance_count_format">Присутствует: %d/%d</string>
     <string name="attendance_not_selected">Присутствует: не выбрана активность</string>
     <string name="activities_title">Активности</string>
-    <string name="loading_journal">Загрузка журнала…</string>
-    <string name="error_loading_journal">Ошибка при загрузке журнала</string>
     <string name="error_loading_children">Ошибка при загрузке детей</string>
     <string name="error_loading_events">Ошибка при загрузке мероприятий</string>
     <string name="error_loading_attendance">Ошибка при загрузке посещаемости</string>
@@ -35,5 +28,4 @@
     <string name="attendance_marked_present">Ребёнок отмечен как присутствующий</string>
     <string name="attendance_marked_absent">Ребёнок отмечен как отсутствующий</string>
     <string name="no_children">В отряде нет детей</string>
-    <string name="no_events">Мероприятий нет</string>
 </resources>

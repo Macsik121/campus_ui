@@ -81,8 +81,10 @@ public class SquadFragment extends Fragment implements ChildAdapter.OnChildActio
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         Log.d(TAG, "onViewCreated");
-
-        initViews(view);
+        initSquadSection();
+    }
+    public void initSquadSection() {
+        initViews(requireView());
         setupRecyclerView();
         setupSearchListener();
         loadSquadData();
@@ -357,7 +359,9 @@ public class SquadFragment extends Fragment implements ChildAdapter.OnChildActio
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 // Enable button if there's text, disable if empty
                 String currentText = s.toString().trim();
-                boolean isEnabled = !currentText.isEmpty();
+                String initialNotes = child.getNotes() != null ? child.getNotes().trim() : "";
+                boolean isEnabled = !initialNotes.equals(currentText);
+                Log.i(TAG, "onTextChanged: isEnabled=" + isEnabled + ", initialNotes=" + initialNotes + ", currentText=" + currentText + isEnabled);
                 btnSaveNotes.setEnabled(isEnabled);
                 // Also update the visual state if DataEditWaitButton has custom state handling
                 if (isEnabled) {
@@ -374,7 +378,7 @@ public class SquadFragment extends Fragment implements ChildAdapter.OnChildActio
 
         // Set initial state based on current notes
         String initialNotes = child.getNotes() != null ? child.getNotes().trim() : "";
-        btnSaveNotes.setEnabled(!initialNotes.isEmpty());
+        btnSaveNotes.setEnabled(!initialNotes.equals(etNotes.getText().toString().trim()));
         if (!initialNotes.isEmpty()) {
             btnSaveNotes.setActivated(true);
         } else {
@@ -385,6 +389,7 @@ public class SquadFragment extends Fragment implements ChildAdapter.OnChildActio
             String newNotes = etNotes.getText() != null ? etNotes.getText().toString().trim() : "";
             btnSaveNotes.showLoading();
 
+            Log.i(TAG, "new Notes: " + newNotes);
             squadRepository.updateChildNotes(child.getId(), newNotes, new DataCallback<Child>() {
                 @Override
                 public void onSuccess(Child updatedChild) {
@@ -411,6 +416,7 @@ public class SquadFragment extends Fragment implements ChildAdapter.OnChildActio
                     if (!isAdded()) return;
                     requireActivity().runOnUiThread(() -> {
                         btnSaveNotes.hideLoading(true);
+                        Log.e(TAG, "onError: " + error);
                         ViewUtils.toast(requireView(), requireContext(), "Ошибка: " + error);
                     });
                 }

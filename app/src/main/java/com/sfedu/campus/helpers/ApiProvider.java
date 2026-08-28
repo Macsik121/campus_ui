@@ -17,26 +17,24 @@ public class ApiProvider {
 
     public static synchronized ApiClient getApiClient(Context context) {
         if (apiClient == null) {
-            // 1. Создаем инстанс
+            // Use Application Context to avoid leaking Activity/Fragment context
+            Context appContext = context.getApplicationContext();
+            
             apiClient = new ApiClient();
-
-            // 2. Задаем базовый URL
             apiClient.setBasePath("http://localhost:3000/api/v1");
 
-            // 3. Создаем логгер для отладки (поможет увидеть, уходит ли заголовок)
             HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
             logging.setLevel(HttpLoggingInterceptor.Level.HEADERS);
 
-            // 4. Настраиваем OkHttpClient с интерцептором для JWT
             OkHttpClient newClient = apiClient.getHttpClient().newBuilder()
                     .addInterceptor(logging)
                     .addInterceptor(new Interceptor() {
                         @Override
                         public Response intercept(Chain chain) throws IOException {
                             Request original = chain.request();
-                            String token = new PreferencesHelper(context).getToken();
+                            // Use the application context stored in the closure
+                            String token = new PreferencesHelper(appContext).getToken();
                             
-                            // Если токен существует, добавляем заголовок Authorization
                             if (token != null && !token.isEmpty()) {
                                 Log.d("ApiProvider", "Intercepting: adding Bearer token to " + original.url());
                                 Request request = original.newBuilder()
@@ -49,7 +47,6 @@ public class ApiProvider {
                     })
                     .build();
 
-            // 5. ВАЖНО: Устанавливаем настроенный клиент обратно в ApiClient
             apiClient.setHttpClient(newClient);
         }
         return apiClient;

@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -215,9 +216,10 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
         private final TextView tvParentPhone;
         private final TextView tvNotes;
         private final ChipGroup cgTags;
-        private final ImageView ivCopyParentName;
-        private final ImageView ivCopyParentPhone;
         private final ImageView ivEditNotes;
+        private final LinearLayout llChildNotes;
+        private final LinearLayout llParentName;
+        private final LinearLayout llParentPhone;
 
         ChildViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -227,9 +229,10 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
             tvParentPhone = itemView.findViewById(R.id.tv_parent_phone);
             tvNotes = itemView.findViewById(R.id.tv_notes);
             cgTags = itemView.findViewById(R.id.cg_tags);
-            ivCopyParentName = itemView.findViewById(R.id.iv_copy_parent_name);
-            ivCopyParentPhone = itemView.findViewById(R.id.iv_copy_parent_phone);
             ivEditNotes = itemView.findViewById(R.id.iv_edit_notes);
+            llChildNotes = itemView.findViewById(R.id.ll_child_notes);
+            llParentName = itemView.findViewById(R.id.ll_parent_name);
+            llParentPhone = itemView.findViewById(R.id.ll_parent_phone);
 
             Log.d("ChildAdapter", "ChildViewHolder: itemView height: " + itemView.getMeasuredHeight() + ", width: " + itemView.getMeasuredWidth());
         }
@@ -248,7 +251,7 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
 
             setupTags(child.getTags());
 
-            ivCopyParentName.setOnClickListener(v -> {
+            llParentName.setOnClickListener(v -> {
                 if (pName != null && !pName.isEmpty()) {
                     copyToClipboard(pName);
                     showToast("Имя родителя скопировано");
@@ -256,7 +259,7 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
                 }
             });
 
-            ivCopyParentPhone.setOnClickListener(v -> {
+            llParentPhone.setOnClickListener(v -> {
                 String phone = child.getParentPhone();
                 if (phone != null && !phone.isEmpty()) {
                     copyToClipboard(phone);
@@ -265,7 +268,7 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
                 }
             });
 
-            ivEditNotes.setOnClickListener(v -> {
+            llChildNotes.setOnClickListener(v -> {
                 if (listener != null) listener.onEditNotes(child);
             });
         }

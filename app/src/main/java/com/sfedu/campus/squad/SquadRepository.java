@@ -51,6 +51,7 @@ public class SquadRepository {
                 Child child = new Child();
                 child.setId(childId);
                 child.setNotes(notes);
+                Log.i("SquadRepository", "updateChildNotes: child: " + child.toString());
                 Child updatedChild = api.updateChild(child);
                 callback.onSuccess(updatedChild);
             } catch (ApiException e) {
