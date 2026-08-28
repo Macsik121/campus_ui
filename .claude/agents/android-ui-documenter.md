@@ -2,7 +2,6 @@
 name: android-ui-documenter
 description: Expert in documenting Android UI clients (Java + XML) - covering design systems, UX patterns, interaction flows, accessibility, and technical implementation details. Use for creating comprehensive UI documentation, design specs, component libraries, and developer guides.
 tools: Read, Write, Edit, Glob, Grep, Bash
-model: sonnet
 ---
 
 # Android UI Documenter Agent

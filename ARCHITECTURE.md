@@ -1,8 +1,8 @@
 # Архитектура приложения "Лагерь-Вожатый"
 
-> Версия документа: 1.0 | Дата: 2025-08-27  
+> Версия документа: 2.0 | Дата: 2025-08-28  
 > Проект: CAMPUS2 (Android, Java, XML)  
-> Стек: Java 17, Android SDK 34, OkHttp 4.x, Gson, OpenAPI Generator 7.10, Material Components 1.12
+> Стек: Java 17, Android SDK 34, OkHttp 4.x, Gson, OpenAPI Generator 7.10, Material Components 1.12, CircleImageView 3.1.0
 
 ---
 
@@ -17,18 +17,18 @@ graph TD
     
     %% Auth Flow
     AuthCheck -- No --> AuthActivity[AuthActivity]
-    AuthActivity --> LoginFragment[LoginFragment]
-    AuthActivity --> RegisterFragment[RegisterFragment]
+    AuthActivity --> LoginFragment[LoginFragment<br/>"Вход"]
+    AuthActivity --> RegisterFragment[RegisterFragment<br/>"Регистрация"]
     
-    LoginFragment -- "Switch" --> RegisterFragment
-    RegisterFragment -- "Switch" --> LoginFragment
+    LoginFragment -- "Кнопка: Регистрация" --> RegisterFragment
+    RegisterFragment -- "Кнопка: Вход" --> LoginFragment
     
-    LoginFragment -- "Login Success" --> MainActivity[MainActivity]
-    RegisterFragment -- "Register Success" --> MainActivity
+    LoginFragment -- "Успешный вход" --> MainActivity[MainActivity]
+    RegisterFragment -- "Успешная регистрация" --> MainActivity
     
     AuthCheck -- Yes --> MainActivity
     
-    %% Main Navigation
+    %% Main Navigation (Bottom Navigation)
     MainActivity --> BottomNav[BottomNavigationView]
     BottomNav --> SquadFragment[SquadFragment<br/>"Отряд"]
     BottomNav --> NotificationsFragment[NotificationsFragment<br/>"Уведомления"]
@@ -37,96 +37,89 @@ graph TD
     BottomNav --> ProfileFragment[ProfileFragment<br/>"Профиль"]
     
     %% Profile interactions
-    ProfileFragment -- "Change Password" --> ChangePasswordDialog[ChangePasswordDialog]
-    ProfileFragment -- "Logout" --> AuthActivity
-    ProfileFragment -- "Save Notes" --> EditNotesDialog[Edit Notes Dialog]
+    ProfileFragment -- "Кнопка: Сменить пароль" --> ChangePasswordDialog[ChangePasswordDialog]
+    ProfileFragment -- "Кнопка: Выйти" --> AuthActivity
+    ProfileFragment -- "Кнопка: Сохранить заметки" --> EditNotesDialog[Edit Notes Dialog]
     
     %% Notifications interactions
-    NotificationsFragment -- "Mark as Read" --> NotificationsFragment
-    NotificationsFragment -- "Read All" --> NotificationsFragment
+    NotificationsFragment -- "Отметить как прочитанное" --> NotificationsFragment
+    NotificationsFragment -- "Прочитать все" --> NotificationsFragment
     
-    %% Squad interactions (planned)
-    SquadFragment -- "Child Card" --> ChildDetailDialog[Child Detail Dialog]
-    SquadFragment -- "Copy Icon" --> EditNotesDialog
+    %% Squad interactions
+    SquadFragment -- "Поиск ребёнка" --> SquadFragment
+    SquadFragment -- "Добавить ребёнка" --> AddChildDialog[Add Child Dialog]
+    SquadFragment -- "Редактировать теги" --> EditTagsDialog[Edit Tags Dialog]
     
-    %% Styling
-    classDef activity fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    classDef fragment fill:#f3e5f5,stroke:#7b1fa2,stroke-width:1px
-    classDef dialog fill:#fff3e0,stroke:#ef6c00,stroke-width:1px,stroke-dasharray: 5 5
-    classDef decision fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
-    
-    class AuthActivity,MainActivity activity
-    class LoginFragment,RegisterFragment,SquadFragment,NotificationsFragment,MapFragment,SquadLogFragment,ProfileFragment fragment
-    class ChangePasswordDialog,EditNotesDialog,ChildDetailDialog dialog
-    class AuthCheck decision
+    %% Squad Log interactions
+    SquadLogFragment -- "Выбрать дату" --> SquadLogFragment
+    SquadLogFragment -- "Выбрать мероприятие" --> SquadLogFragment
+    SquadLogFragment -- "Отметить посещаемость" --> SquadLogFragment
 ```
-
-### Экраны и их назначение
-
-| Экран | Класс | Роль | Ключевые UI-элементы |
-|-------|-------|------|---------------------|
-| **AuthActivity** | `AuthActivity` | Контейнер для авторизации | `FrameLayout` (fragment_container), кнопки переключения Login/Register |
-| **LoginFragment** | `LoginFragment` | Форма входа | Email, Password, MaterialButton "Войти", TextInputLayout с валидацией |
-| **RegisterFragment** | `RegisterFragment` | Форма регистрации | Name, Email, Password, MaterialButton "Зарегистрироваться", спецсимвол в пароле |
-| **MainActivity** | `MainActivity` | Главный контейнер после входа | BottomNavigationView (5 вкладок), FrameLayout для фрагментов, Jesus saying |
-| **SquadFragment** | `SquadFragment` | Список детей в отряде | RecyclerView, карточки детей (ФИО, возраст, родитель, теги, заметки) |
-| **NotificationsFragment** | `NotificationFragment` | Список уведомлений | RecyclerView, ProgressBar, кнопка "Прочитать все", счетчик непрочитанных |
-| **MapFragment** | `MapFragment` | Карта (заглушка) | WebView / MapView (в разработке) |
-| **SquadLogFragment** | `SquadLogFragment` | Журнал отряда (заглушка) | RecyclerView с логами (в разработке) |
-| **ProfileFragment** | `ProfileFragment` | Профиль вожатого | CircleImageView, поля ФИО/Email/Телефон, DataEditWaitButton, смена пароля, выход |
-
-### Состояния экранов (State Matrix)
-
-| Экран | Empty | Loading | Content | Error | Offline |
-|-------|-------|---------|---------|-------|---------|
-| Login/Register | — | Button disabled | Form ready | Inline field errors + Snackbar | Snackbar "Нет сети" |
-| SquadFragment | "Вожатый не привязан к отряду" | ProgressBar + Overlay | RecyclerView с детьми | Snackbar + Retry | Кэш / Snackbar |
-| NotificationsFragment | "Нет уведомлений" | ProgressBar + Overlay | Список | Snackbar | Кэш |
-| ProfileFragment | — | ProgressBar + Overlay | Заполненные поля | Snackbar + Retry | — |
 
 ---
 
 ## 2. Потоки данных и архитектура (Data Flow)
 
-*Описание: Как экраны общаются с сервером. Два подхода: **Legacy** (свой `ApiClient` + POJO) для Auth и **Modern** (OpenAPI-generated) для остального.*
+*Описание: Как экраны общаются с сервером, что такое Repository, как обрабатываются ошибки. Два подхода: Legacy (ApiClient) для авторизации и Modern (OpenAPI) для остальных экранов.*
 
 ### 2.1. Общая схема слоёв
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        UI LAYER (Fragments)                     │
-│  LoginFragment • RegisterFragment • ProfileFragment • ...       │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ callbacks / listeners
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      REPOSITORY / API LAYER                     │
-│  ┌──────────────────────────┐  ┌────────────────────────────┐  │
-│  │   LEGACY ApiClient       │  │   MODERN OpenAPI Client    │  │
-│  │   (helpers/ApiClient)    │  │   (generated/api/*)        │  │
-│  │   • login()              │  │   • ProfileApi             │  │
-│  │   • register()           │  │   • NotificationsApi       │  │
-│  │   • getUser()            │  │   • SquadsApi              │  │
-│  │   • isTokenValid()       │  │   • ChildrenApi            │  │
-│  │   • post()/get()         │  │   • ApiProvider (config)   │  │
-│  └──────────────┬───────────┘  └──────────────┬─────────────┘  │
-│                 │                             │                │
-│                 ▼                             ▼                │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │              NETWORK (OkHttp + Interceptors)              │  │
-│  │  • Base URL: http://localhost:3000/api/v1                 │  │
-│  │  • Auth: Bearer JWT в Authorization header                │  │
-│  │  • Logging: HttpLoggingInterceptor (HEADERS)              │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      STORAGE LAYER                              │
-│  PreferencesHelper (SharedPreferences "AppPrefs")               │
-│  • jwt_token          — Bearer токен                            │
-│  • Jesus_says         — Цитата для главного экрана              │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph UI_LAYER [UI LAYER - Fragments & Activities]
+        AuthF[LoginFragment / RegisterFragment]
+        ProfileF[ProfileFragment]
+        NotifF[NotificationFragment]
+        SquadF[SquadFragment]
+        SquadLogF[SquadLogFragment]
+        MapF[MapFragment]
+    end
+    
+    subgraph VM_LAYER [VIEWMODEL LAYER]
+        AuthVM[AuthViewModel]
+        RegVM[RegViewModel]
+    end
+    
+    subgraph REPO_API [REPOSITORY / API LAYER]
+        direction TB
+        LegacyApi[LEGACY ApiClient<br/>helpers/ApiClient.java]
+        ModernApi[MODERN OpenAPI Client<br/>generated/api/*]
+        
+        LegacyApi --> LegacyEndpoints[• login()<br/>• register()<br/>• getUser()<br/>• verifyJWT()]
+        ModernApi --> ModernEndpoints[• ProfileApi<br/>• NotificationsApi<br/>• SquadsApi<br/>• ChildrenApi<br/>• EventsApi<br/>• TagsApi]
+    end
+    
+    subgraph NETWORK [NETWORK LAYER]
+        OkHttp[OkHttpClient + Interceptors]
+        BaseUrl[Base URL: http://localhost:3000/api/v1]
+        AuthHeader[Auth: Bearer JWT в Authorization header]
+        Logging[Logging: HttpLoggingInterceptor (HEADERS)]
+    end
+    
+    subgraph STORAGE [STORAGE LAYER]
+        Prefs[PreferencesHelper<br/>SharedPreferences "AppPrefs"]
+        Prefs --> JwtToken[jwt_token — Bearer токен]
+        Prefs --> JesusSay[Jesus_says — Цитата для главного экрана]
+        Prefs --> SquadId[squad_id — UUID текущего отряда]
+        Prefs --> SquadTitle[squad_title — Название отряда]
+    end
+    
+    AuthF --> AuthVM
+    AuthVM --> LegacyApi
+    ProfileF --> ModernApi
+    NotifF --> ModernApi
+    SquadF --> ModernApi
+    SquadLogF --> ModernApi
+    MapF --> ModernApi
+    
+    LegacyApi --> OkHttp
+    ModernApi --> OkHttp
+    OkHttp --> BaseUrl
+    OkHttp --> AuthHeader
+    OkHttp --> Logging
+    
+    LegacyApi --> Prefs
+    ModernApi --> Prefs
 ```
 
 ### 2.2. Sequence Diagram: Авторизация (Legacy ApiClient)
@@ -158,15 +151,9 @@ sequenceDiagram
         LoginF->>Nav: goToMain(context)
         Nav->>AuthActivity: finish()
         Nav->>MainActivity: startActivity(CLEAR_TASK|NEW_TASK)
-        MainActivity-->>User: Показывает BottomNavigation + SquadFragment
+        MainActivity-->>User: Показывает BottomNavigation + SquadF
     end
 ```
-
-**Endpoints (Legacy):**
-- `POST /auth/login` → `LoginResponse { token, user }`
-- `POST /auth/register` → `RegisterResponse { token, user }`
-- `GET /auth/verify-jwt` → `VerifyJWTResponse { valid: boolean }`
-- `GET /users/profile/{userId}` → `User` (from JWT payload)
 
 ### 2.3. Sequence Diagram: Регистрация (Legacy ApiClient)
 
@@ -179,6 +166,7 @@ sequenceDiagram
     participant Api as Legacy ApiClient
     participant Prefs as PreferencesHelper
     participant Nav as NavigationHelper
+    participant Server as Backend API
 
     User->>RegF: Заполняет Name/Email/Password, нажимает "Зарегистрироваться"
     RegF->>VM: bindTextInputLayoutReg() → сохраняет значения
@@ -218,24 +206,16 @@ sequenceDiagram
     ApiProvider->>ApiProvider: new ApiClient() + setBasePath()
     ApiProvider->>OkHttp: newBuilder().addInterceptor(JWTInterceptor)
     Note right of OkHttp: JWTInterceptor:<br/>Prefs.getToken() → "Authorization: Bearer <token>"
-    OkHttp->>Server: GET /users/profile
+    OkHttp->>Server: GET /users/profile + Auth header
     Server-->>OkHttp: 200 OK + UserProfile JSON
-    OkHttp-->>ProfileApi: Deserialized UserProfile (generated model)
-    ProfileApi-->>ProfileF: onProfileLoaded(UserProfile)
-    ProfileF->>ProfileF: populateUI() — заполняет TextView/TextInputEditText
-    ProfileF->>ProfileF: storeOriginalValues() — для change detection
-    ProfileF->>ProfileF: setLoading(false) — скрывает ProgressBar + Overlay
+    OkHttp-->>ProfileApi: Response deserialized by Gson
+    ProfileApi-->>ProfileF: callback.onSuccess(UserProfile)
+    ProfileF->>ProfileF: populateUI(), storeOriginalValues()
+    ProfileF->>ProfileF: setLoading(false) — UI enabled
+    ProfileF-->>User: Показывает профиль (Name, Email, Phone, Role, Squad)
 ```
 
-**Endpoints (Modern OpenAPI):**
-- `GET /users/profile` → `UserProfile { id, fullName, email, phoneNumber, role, avatar, squad }`
-- `PUT /users/profile` → `UserProfile` (partial update — только изменённые поля)
-- `GET /squads/{squadId}/children` → `List<Child>`
-- `GET /notifications` → `List<Notification>`
-- `POST /notifications/read` → `ReadNotificationResponse`
-- `POST /notifications/read-all` → `ReadAllNotifications200Response`
-
-### 2.5. Sequence Diagram: Сохранение профиля (Modern OpenAPI)
+### 2.5. Sequence Diagram: Обновление профиля (Modern OpenAPI)
 
 ```mermaid
 sequenceDiagram
@@ -278,29 +258,68 @@ sequenceDiagram
     NotifF->>NotifF: onViewCreated() → notificationsApi = new NotificationsApi(ApiProvider.getApiClient())
     NotifF->>NotifF: showLoading(true)
     NotifF->>NotifApi: getNotificationsAsync(20, callback)
-    NotifApi->>ApiProvider: getApiClient(context) → configured OkHttp with JWT
-    NotifApi->>Server: GET /notifications?limit=20
+    NotifApi->>ApiProvider: getApiClient(context) → configured OkHttpClient
+    ApiProvider->>Prefs: getToken() для JWT
+    NotifApi->>Server: GET /notifications?limit=20 + Auth
     Server-->>NotifApi: 200 OK + List<Notification>
     NotifApi-->>NotifF: callback.onSuccess(List<Notification>)
-    NotifF->>NotifF: adapter.submitList() → RecyclerView обновляется
+    NotifF->>NotifF: adapter.setNotifications(), updateUnreadCount()
     NotifF->>NotifF: showLoading(false)
-    
+    NotifF-->>User: RecyclerView с уведомлениями
+
     User->>NotifF: Нажимает "Прочитать" на уведомлении
-    NotifF->>NotifApi: readNotificationAsync(ReadNotificationRequest{id}, callback)
-    NotifApi->>Server: POST /notifications/read + { id }
+    NotifF->>NotifApi: readNotificationAsync(notificationId, callback)
+    NotifApi->>Server: POST /notifications/read + {id}
     Server-->>NotifApi: 200 OK
     NotifApi-->>NotifF: callback.onSuccess()
-    NotifF->>NotifF: adapter.notifyItemChanged() — UI update
-    
-    User->>NotifF: Нажимает "Прочитать все"
-    NotifF->>NotifApi: readAllNotificationsAsync(callback)
-    NotifApi->>Server: POST /notifications/read-all
-    Server-->>NotifApi: 200 OK
-    NotifApi-->>NotifF: callback.onSuccess()
-    NotifF->>NotifF: fetchNotifications() — рефреш списка
+    NotifF->>NotifF: notification.setRead(true), adapter.notifyItemChanged()
+    NotifF->>NotifF: updateUnreadCount()
 ```
 
-### 2.7. Обработка ошибок (Error Handling Strategy)
+### 2.7. Sequence Diagram: Журнал отряда (Modern OpenAPI)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant SquadLogF as SquadLogFragment
+    participant SquadLogApi as SquadLogRepository
+    participant SquadsApi as SquadsApi (generated)
+    participant EventsApi as EventsApi (generated)
+    participant ChildrenApi as ChildrenApi (generated)
+    participant Prefs as PreferencesHelper
+    participant Server as Backend API
+
+    User->>SquadLogF: Открывает вкладку "Журнал отряда"
+    SquadLogF->>SquadLogF: onViewCreated() → loadChildren(), loadEventsForCurrentDate()
+    SquadLogF->>SquadsApi: getSquadChildren(squadId)
+    SquadsApi->>Prefs: getToken()
+    SquadsApi->>Server: GET /squads/{squadId}/children
+    Server-->>SquadsApi: List<Child>
+    SquadsApi-->>SquadLogF: childAdapter.setChildren()
+
+    SquadLogF->>EventsApi: getEvents(date, limit=10)
+    EventsApi->>Prefs: getToken()
+    EventsApi->>Server: GET /events?date=...&limit=10
+    Server-->>EventsApi: List<Event>
+    EventsApi-->>SquadLogF: eventAdapter.setEvents()
+
+    User->>SquadLogF: Выбирает мероприятие в списке
+    SquadLogF->>SquadLogF: selectedEventId = event.id, eventAdapter.setSelectedEventId()
+    SquadLogF->>SquadsApi: getEventAttendance(eventId, squadId)
+    SquadsApi->>Server: GET /events/{eventId}/attendance?squadId=...
+    Server-->>SquadsApi: GetAttendanceResponse { childIds[] }
+    SquadsApi-->>SquadLogF: childAdapter.setPresentChildIds()
+
+    User->>SquadLogF: Тоггл checkbox для ребёнка
+    SquadLogF->>ChildrenApi: updateAttendance(eventId, childId, present)
+    ChildrenApi->>Server: PUT /events/{eventId}/attendance/{childId}
+    Server-->>ChildrenApi: 200 OK + UpdateAttendanceResponse
+    ChildrenApi-->>SquadLogF: callback.onSuccess()
+    SquadLogF->>SquadLogF: updateAttendanceCount(), Snackbar success
+```
+
+### 2.8. Обработка ошибок (Error Handling Strategy)
 
 | Слой | Стратегия | Пример |
 |------|-----------|--------|
@@ -318,30 +337,29 @@ sequenceDiagram
 
 | Класс | Назначение | Где используется | Пример вызова | Ключевые методы |
 |-------|------------|------------------|---------------|-----------------|
-| **PreferencesHelper** | Абстракция над `SharedPreferences` для JWT и настроек. Хранит токен, декодирует JWT payload. | `AuthActivity`, `LoginFragment`, `RegisterFragment`, `MainActivity`, `ProfileFragment`, `ApiProvider`, `Legacy ApiClient` | `new PreferencesHelper(context).saveToken(token)`<br/>`prefs.getToken()`<br/>`prefs.decodePayload()` → `JSONObject` | `saveToken(String)`<br/>`getToken(): String`<br/>`isTokenSet(): Boolean`<br/>`clear()`<br/>`decodePayload(): JSONObject`<br/>`saveJesusSaying(String)` / `getJesusSaying()` |
-| **ViewUtils** | UI-утилиты: тосты (Snackbar), биндинг TextInputLayout→ViewModel, скругление кнопок, цвет фона. | `LoginFragment`, `RegisterFragment`, `ProfileFragment`, `NotificationFragment`, все фрагменты | `ViewUtils.toast(view, context, "Текст")`<br/>`ViewUtils.bindTextInputLayoutAuth(layout, viewModel, "email")`<br/>`ViewUtils.setButtonCornerRadius(btn, 14)`<br/>`ViewUtils.setBGColor(view, Color.WHITE)` | `toast(View, Context, String)`<br/>`setButtonCornerRadius(MaterialButton, float)`<br/>`setBGColor(View, int)`<br/>`bindTextInputLayoutAuth(TextInputLayout, AuthViewModel, String)`<br/>`bindTextInputLayoutReg(TextInputLayout, RegViewModel, String)`<br/>`dpToPx(float): int` |
+| **PreferencesHelper** | Абстракция над `SharedPreferences` для JWT и настроек. Хранит токен, декодирует JWT payload, сохраняет squad_id/squad_title. | `AuthActivity`, `LoginFragment`, `RegisterFragment`, `MainActivity`, `ProfileFragment`, `ApiProvider`, `Legacy ApiClient`, `SquadFragment`, `SquadLogFragment`, `NotificationFragment` | `new PreferencesHelper(context).saveToken(token)`<br/>`prefs.getToken()`<br/>`prefs.decodePayload()` → `JSONObject` | `saveToken(String)`<br/>`getToken(): String`<br/>`isTokenSet(): Boolean`<br/>`clear()`<br/>`decodePayload(): JSONObject`<br/>`saveJesusSaying(String)` / `getJesusSaying()`<br/>`saveSquadId(UUID)` / `getSquadId(): UUID`<br/>`saveSquadTitle(String)` / `getSquadTitle(): String` |
+| **ViewUtils** | UI-утилиты: Snackbar с логотипом, биндинг TextInputLayout→ViewModel (auth/reg), скругление кнопок, цвет фона, dp→px конвертер. | `LoginFragment`, `RegisterFragment`, `ProfileFragment`, `NotificationFragment`, `SquadFragment`, `SquadLogFragment`, все фрагменты | `ViewUtils.showSnackbar(view, "Текст")`<br/>`ViewUtils.bindTextInputLayoutAuth(layout, viewModel, "email")`<br/>`ViewUtils.setButtonCornerRadius(btn, 14)`<br/>`ViewUtils.setBGColor(view, Color.WHITE)`<br/>`ViewUtils.dpToPx(16)` | `showSnackbar(View, String)`<br/>`toast(View, Context, String)` (deprecated, использует Snackbar)<br/>`setButtonCornerRadius(MaterialButton, float)`<br/>`setBGColor(View, int)`<br/>`bindTextInputLayoutAuth(TextInputLayout, AuthViewModel, String)`<br/>`bindTextInputLayoutReg(TextInputLayout, RegViewModel, String)`<br/>`dpToPx(float): int` |
 | **NavigationHelper** | Навигация между Activity с очисткой бэк-стека (FLAG_ACTIVITY_CLEAR_TASK \| NEW_TASK). | `LoginFragment`, `RegisterFragment`, `ProfileFragment`, `MainActivity`, `AuthActivity` | `NavigationHelper.goToMain(context)`<br/>`NavigationHelper.goToAuth(context)` | `goToMain(Context)` — запускает `MainActivity`<br/>`goToAuth(Context)` — запускает `AuthActivity` |
-| **ApiProvider** | Фабрика для современного OpenAPI клиента. Создаёт `ApiClient` с базовым URL и JWT-интерцептором. Одиночка (singleton). | `ProfileFragment`, `NotificationFragment`, будущие фрагменты (Squad, Map, SquadLog) | `ApiProvider.getApiClient(context)` → `ApiClient`<br/>`new ProfileApi(ApiProvider.getApiClient(context))` | `getApiClient(Context): ApiClient`<br/>`getApiClient(): ApiClient` (без контекста — без токена) |
-| **Legacy ApiClient** | Старый самописный клиент на OkHttp + Gson. Используется **только** для Auth endpoints (`/auth/login`, `/auth/register`, `/auth/verify-jwt`, `/users/profile/{id}`). Синглтон. | `LoginFragment`, `RegisterFragment`, `AuthActivity` (закомментировано) | `ApiClient.getInstance().login(email, pass, callback, context)`<br/>`ApiClient.getInstance().register(name, email, pass, callback, context)`<br/>`ApiClient.getInstance().getUser(view, context, callback)` | `login(String, String, ApiCallback<LoginResponse>, Context)`<br/>`register(String, String, String, ApiCallback<RegisterResponse>, Context)`<br/>`post/get/getWithParams` — generic HTTP<br/>`isTokenValid(View, Context): boolean` (async, но возвращает сразу — **баг**)<br/>`getUser(View, Context, ApiCallback<User>)` |
-| **DataCallback** | Универсальный колбэк для репозиториев (success/error). Используется в `ProfileFragment` для единообразия. | `ProfileFragment` (внутренне), будущие Repository классы | `new DataCallback<UserProfile>() { onSuccess(data), onError(err) }` | `onSuccess(T data)`<br/>`onError(String error)` |
-| **AuthViewModel / RegViewModel** | `ViewModel` для сохранения ввода при ротации экрана / переключении фрагментов внутри `AuthActivity`. | `LoginFragment`, `RegisterFragment` | `new ViewModelProvider(requireActivity()).get(AuthViewModel.class)`<br/>`viewModel.setEmail(value)`<br/>`viewModel.getEmail().getValue()` | `setEmail/getEmail`: `MutableLiveData<String>`<br/>`setPassword/getPassword`<br/>`setName/getName` (RegViewModel) |
+| **ApiProvider** | Фабрика для современного OpenAPI клиента. Создаёт `ApiClient` с базовым URL и JWT-интерцептором. Одиночка (singleton). | `ProfileFragment`, `NotificationFragment`, `SquadFragment`, `SquadLogFragment`, `MapFragment` | `ApiProvider.getApiClient(context)` → `ApiClient`<br/>`new ProfileApi(ApiProvider.getApiClient(context))` | `getApiClient(Context): ApiClient`<br/>`initialize(Context)` — явная инициализация |
+| **AuthViewModel** | ViewModel для сохранения ввода полей LoginFragment при смене конфигурации (rotation). | `LoginFragment` | `new ViewModelProvider(requireActivity()).get(AuthViewModel.class)` | `getEmail(): MutableLiveData<String>`<br/>`getPassword(): MutableLiveData<String>` |
+| **RegViewModel** | ViewModel для сохранения ввода полей RegisterFragment (name, email, password). | `RegisterFragment` | `new ViewModelProvider(requireActivity()).get(RegViewModel.class)` | `getName(): MutableLiveData<String>`<br/>`getEmail(): MutableLiveData<String>`<br/>`getPassword(): MutableLiveData<String>` |
+| **DataEditWaitButton** | Кастомный MaterialButton: disabled (серый) пока нет изменений, enabled (цветной) при изменениях, состояние загрузки "Сохранение...". | `ProfileFragment`, `SquadFragment` | `btnSaveChanges.setHasChanges(true)`<br/>`btnSaveChanges.showLoading()`<br/>`btnSaveChanges.hideLoading(false)` | `setHasChanges(boolean)`<br/>`hasChanges(): boolean`<br/>`showLoading()`<br/>`hideLoading(boolean hasChanges)`<br/>`reset()` |
+| **PhoneTextWatcher** | TextWatcher для форматирования телефона по маске +7 (xxx) xxx-xx-xx при вводе. | `ProfileFragment` | `etPhone.addTextChangedListener(new PhoneTextWatcher(etPhone))` | Реализует `TextWatcher`, форматирует на лету |
 
 ---
 
-## 4. Сравнение двух подходов к API
+## 4. Сравнение подходов: Legacy vs Modern API
 
-| Аспект | Legacy ApiClient (`helpers/ApiClient.java`) | Modern OpenAPI (`generated/`) |
-|--------|--------------------------------------------|-------------------------------|
-| **Генерация** | Ручной код | `openApiGenerate` Gradle task из `swagger.yaml` |
-| **Модели** | POJO в `models/server_requests`, `models/server_responses` | Generated в `generated/model/*` (Immutable, Builder pattern) |
-| **API Интерфейсы** | Методы в классе `ApiClient` | Отдельные интерфейсы: `ProfileApi`, `NotificationsApi`, `SquadsApi`, `ChildrenApi`, `AuthApi` |
-| **Аутентификация** | Ручной `addHeader("Authorization", "Bearer " + token)` в каждом запросе | Интерцептор в `ApiProvider` — автоматически подхватывает токен из `PreferencesHelper` |
-| **Колбэки** | `ApiCallback<T> { onSuccess(T), onFailure(String) }` | `ApiCallback<T> { onSuccess(T, int, Map), onFailure(ApiException, int, Map) }` |
+| Характеристика | Legacy (ApiClient) | Modern (OpenAPI Generated) |
+|----------------|-------------------|---------------------------|
+| **Файлы** | `helpers/ApiClient.java`, POJO в `models/` | `generated/api/*Api.java`, `generated/model/*` |
+| **Авторизация** | `login()`, `register()`, `verifyJWT()`, `getUser()` | Только через `AuthApi` (не используется в UI) |
+| **Модели данных** | Ручные POJO (`LoginRequest`, `RegisterResponse`, `User`) | Автогенерированные из swagger.yaml |
 | **Асинхронность** | `enqueue()` + callback на главном потоке | `...Async()` методы + callback |
 | **Использование** | **Auth**: Login, Register, Verify JWT, GetUser (by ID from JWT) | **Всё остальное**: Profile, Notifications, Squads, Children, Events, Tags, Map |
 | **Статус** | Deprecated для новых экранов; поддерживается для совместимости | Основной путь развития |
 
-> **Миграция**: Новые экраны (SquadFragment, MapFragment, SquadLogFragment) должны использовать Modern подход через `ApiProvider` + соответствующий `*Api` интерфейс.
+> **Миграция**: Новые экраны (`SquadFragment`, `MapFragment`, `SquadLogFragment`) должны использовать Modern подход через `ApiProvider` + соответствующий `*Api` интерфейс.
 
 ---
 
@@ -369,8 +387,8 @@ dependencies {
 }
 
 // openApiGenerate задача генерирует:
-// - generated/api/*Api.java (интерфейсы)
-// - generated/model/* (модели данных)
+// - generated/api/*Api.java (интерфейсы: ProfileApi, NotificationsApi, SquadsApi, ChildrenApi, EventsApi, TagsApi, AuthApi)
+// - generated/model/* (модели данных: UserProfile, Notification, Child, Event, ChildTag, ...)
 // - generated/invoker/ApiClient.java (базовый клиент), Configuration, ApiException, auth/*
 ```
 
@@ -386,73 +404,100 @@ dependencies {
 | `profile` | `GET /users/profile` | `ProfileApi.getUserProfile()` | `UserProfile` | `ProfileFragment` |
 | `profile` | `PUT /users/profile` | `ProfileApi.updateUserProfile()` | `UserProfile` | `ProfileFragment` |
 | `squads` | `GET /squads/{squadId}/children` | `SquadsApi.getSquadChildren()` | `Child`, `ChildTag` | `SquadFragment` (planned) |
+| `squads` | `GET /events/{eventId}/attendance` | `SquadsApi.getEventAttendance()` | `GetAttendanceResponse` | `SquadLogFragment` |
 | `notifications` | `GET /notifications` | `NotificationsApi.getNotifications()` | `Notification` | `NotificationFragment` |
 | `notifications` | `POST /notifications/read` | `NotificationsApi.readNotification()` | `ReadNotificationRequest/Response` | `NotificationFragment` |
 | `notifications` | `POST /notifications/read-all` | `NotificationsApi.readAllNotifications()` | `ReadAllNotifications200Response` | `NotificationFragment` |
-| `events` | `GET /events` | `EventsApi.getEvents()` | `Event` | `MapFragment` (planned) |
+| `events` | `GET /events` | `EventsApi.getEvents()` | `Event` | `MapFragment` (planned), `SquadLogFragment` |
+| `events` | `PUT /events/{eventId}/attendance/{childId}` | `ChildrenApi.updateEventAttendance()` | `UpdateAttendanceResponse` | `SquadLogFragment` |
 | `tags` | `GET /tags` | `TagsApi.getTags()` | `ChildTag` | `SquadFragment` (теги детей) |
 
 ---
 
-## 7. Известные проблемы и технический долг
+## 7. Основные экраны и их состояния (State Matrix)
+
+### 7.1. LoginFragment / RegisterFragment (AuthActivity)
+
+| Состояние | Описание | UI |
+|-----------|----------|-----|
+| **Initial** | Пустые поля, кнопка входа/регистрации активна | TextInputLayout без ошибок |
+| **Validating** | Пользователь вводит данные | Реал-тайм валидация: setError() на полях |
+| **Loading** | Запрос к серверу | ViewUtils.showSnackbar не показывается, кнопка может быть disabled |
+| **Error** | Неверные креды / сеть | Snackbar с ошибкой, поля сохраняют ввод |
+| **Success** | Токен получен | NavigationHelper.goToMain() |
+
+### 7.2. ProfileFragment
+
+| Состояние | Описание | UI |
+|-----------|----------|-----|
+| **Loading** | Загрузка профиля | ProgressBar + Overlay (clickable), поля disabled |
+| **Loaded** | Данные получены | Поля заполнены, btnSaveChanges disabled (серый) |
+| **Editing** | Пользователь меняет поля | btnSaveChanges enabled (цветной) |
+| **Validation Error** | Неверный email/phone | TextInputLayout.setError() |
+| **Saving** | Отправка на сервер | btnSaveChanges: "Сохранение...", disabled, поля frozen |
+| **Saved** | Успешный ответ | Snackbar успех, btnSaveChanges reset к disabled |
+| **Save Error** | Ошибка сервера | Snackbar ошибка, btnSaveChanges hideLoading(true), поля unfreeze |
+| **Token Expired** | 401 при загрузке | logout() → AuthActivity |
+
+### 7.3. NotificationFragment
+
+| Состояние | Описание | UI |
+|-----------|----------|-----|
+| **Loading** | Загрузка списка | ProgressBar + Overlay |
+| **Loaded (data)** | Уведомления есть | RecyclerView, header с unread count, кнопка "Прочитать все" если есть непрочитанные |
+| **Loaded (empty)** | Уведомлений нет | Empty state text "Уведомлений нет" |
+| **Error** | Ошибка загрузки | Snackbar, retry при pull-to-refresh (если реализовано) |
+| **Marking Read** | Отметка одного | Item обновляется: фон становится белым, unread count -1 |
+| **Read All** | Массовая отметка | Все items обновляются, кнопка "Прочитать все" скрывается |
+
+### 7.4. SquadLogFragment
+
+| Состояние | Описание | UI |
+|-----------|----------|-----|
+| **Loading** | Загрузка детей/мероприятий | ProgressBar + Overlay |
+| **Date Selected** | Выбрана дата | DatePicker показывает дату, список мероприятий для даты |
+| **Event Selected** | Выбрано мероприятие | Event подсвечен, дети с checkboxes (green=present, red=absent) |
+| **No Event Selected** | Мероприятие не выбрано | Дети без checkboxes, attendance count = "Мероприятие не выбрано" |
+| **Marking Attendance** | Тоггл checkbox | Checkbox заморожен до ответа сервера |
+| **Error** | Ошибка отметки | Checkbox ревертится, Snackbar ошибка |
+
+---
+
+## 8. Известные проблемы и технический долг
 
 1. **`ApiClient.isTokenValid()`** — асинхронный вызов, но возвращает `boolean` синхронно (всегда `false`). Закомментирован в `AuthActivity` и `MainActivity`.
 2. **Два способа хранения токена**: `PreferencesHelper` (новый) и прямой доступ к `SharedPreferences` в старом `ApiClient.getClient()`. Нужно унифицировать.
 3. **`DataEditWaitButton`** — кастомная вью в `profile` пакете, должна быть вынесена в `ui/common` или `widgets`.
-4. **SquadFragment, MapFragment, SquadLogFragment** — только заглушки (inflate layout). Реальная логика с OpenAPI не реализована.
-5. **Нет единого Repository слоя** — фрагменты вызывают API напрямую. Планируется вынести в `data/repository/*`.
-6. **Обработка 401** — в Modern API нет глобального перехватчика; каждый фрагмент обрабатывает сам.
+4. **SquadFragment, MapFragment** — частично реализованы (SquadLogFragment готов).
+5. **Pull-to-refresh** — не реализован в `NotificationFragment`, `SquadFragment`.
+6. **Офлайн-режим** — нет кэширования ответов (Room/SharedPreferences для офлайн-поддержки).
+7. **JWT Refresh** — нет автоматического рефреша access token (backend должен поддерживать refresh token).
+8. **Hardcoded Base URL** — в `ApiClient.BASE_URL` и `ApiProvider` (buildConfigField или gradle property).
+9. **Test Coverage** — нет unit/UI тестов (Espresso, JUnit, MockWebServer).
 
 ---
 
-## 8. Файловая структура (релевантная часть)
+## 9. Навигация и Deep Links (планируется)
 
+```mermaid
+graph LR
+    Auth[AuthActivity] -->|goToMain| Main[MainActivity]
+    Main -->|BottomNav| Squad[SquadFragment]
+    Main -->|BottomNav| Notif[NotificationFragment]
+    Main -->|BottomNav| Map[MapFragment]
+    Main -->|BottomNav| Log[SquadLogFragment]
+    Main -->|BottomNav| Prof[ProfileFragment]
+    Prof -->|Logout| Auth
+    Prof -->|Change Pass| Dialog1[ChangePasswordDialog]
+    Prof -->|Edit Notes| Dialog2[EditNotesDialog]
 ```
-app/src/main/java/com/sfedu/campus/
-├── auth/
-│   ├── AuthActivity.java
-│   ├── LoginFragment.java
-│   ├── RegisterFragment.java
-│   ├── AuthViewModel.java
-│   └── RegViewModel.java
-├── main/
-│   └── MainActivity.java
-├── profile/
-│   ├── ProfileFragment.java
-│   ├── DataEditWaitButton.java       # Custom View
-│   └── fragment_profile.xml
-├── squad/
-│   ├── SquadFragment.java
-│   └── fragment_squad.xml
-├── notifications/
-│   ├── NotificationFragment.java
-│   ├── NotificationAdapter.java
-│   └── fragment_notification.xml
-├── map/
-│   ├── MapFragment.java
-│   └── fragment_map.xml
-├── squad_log/
-│   ├── SquadLogFragment.java
-│   └── fragment_squad_log.xml
-├── helpers/
-│   ├── PreferencesHelper.java
-│   ├── ViewUtils.java
-│   ├── NavigationHelper.java
-│   ├── ApiClient.java                # LEGACY
-│   └── ApiProvider.java              # MODERN factory
-├── data/
-│   └── datasource/
-│       └── DataCallback.java
-├── models/
-│   ├── data_models/                  # Legacy POJO (Child, User)
-│   ├── server_requests/              # Legacy Request (LoginRequest, RegisterRequest)
-│   └── server_responses/             # Legacy Response (LoginResponse, RegisterResponse, VerifyJWTResponse)
-└── generated/                        # OpenAPI Generated (не коммитится, генерируется при сборке)
-    ├── api/                          # *Api.java interfaces
-    ├── model/                        # Data models (UserProfile, Child, Notification, etc.)
-    └── invoker/                      # ApiClient, Configuration, ApiException, auth/*
-```
+
+**Deep Links (planned):**
+- `campus://profile` → ProfileFragment
+- `campus://notifications` → NotificationFragment
+- `campus://squad/{squadId}` → SquadFragment
+- `campus://squad-log?date=YYYY-MM-DD` → SquadLogFragment с датой
 
 ---
 
-*Документ создан автоматически на основе анализа кодовой базы CAMPUS2. Обновляйте при изменении архитектуры.*
+*Документ актуален на commit: `HEAD` | Последнее обновление: 2025-08-28*

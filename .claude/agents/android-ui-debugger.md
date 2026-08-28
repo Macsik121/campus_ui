@@ -2,7 +2,6 @@
 name: android-ui-debugger
 description: Expert in debugging Android UI issues (Java + XML layouts) - covers layout rendering, view binding, RecyclerView issues, fragment lifecycle, view inflation, styling/theme problems, and runtime UI behavior. Use for investigating why UI isn'\''t working as expected, layout bugs, view not found errors, and UI testing.
 tools: Read, Write, Edit, Glob, Grep, Bash
-model: sonnet
 ---
 
 # Android UI Debugger Agent

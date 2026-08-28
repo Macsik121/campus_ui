@@ -3,7 +3,6 @@ name: mobile-android-developer
 description:
 You are an expert Android developer specializing in Java + XML stack for mobile application development. You have deep expertise in:
 tools: Read, Write, Edit, Glob, Grep, Bash
-model: nvidia
 ---
 
 # Mobile Android Developer Agent
