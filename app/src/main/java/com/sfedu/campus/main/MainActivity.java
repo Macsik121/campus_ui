@@ -41,11 +41,6 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private BottomNavigationView bottomNavigationView;
-
-    // Карта для хранения фрагментов. Ключ = ID пункта меню, Значение = Фрагмент
-    private final Map<Integer, Fragment> fragmentMap = new HashMap<>();
-
-    // По умолчанию показываем раздел "Отряд"
     private int currentNavItemId = R.id.nav_squad;
 
     @Override
@@ -57,14 +52,13 @@ public class MainActivity extends AppCompatActivity {
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
         PreferencesHelper prefs = new PreferencesHelper(this);
-//        if (!ApiClient.getInstance().isTokenValid(findViewById(R.id.main), this)) {
         if (!prefs.isTokenSet()) {
             NavigationHelper.goToAuth(this);
             return;
         }
 
-        TextView sign_of_what_jesus_says = findViewById(R.id.jesus_saying);
-        sign_of_what_jesus_says.setText(new PreferencesHelper(this).getJesusSaying());
+//        TextView sign_of_what_jesus_says = findViewById(R.id.jesus_saying);
+//        sign_of_what_jesus_says.setText(new PreferencesHelper(this).getJesusSaying());
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -100,22 +94,11 @@ public class MainActivity extends AppCompatActivity {
      */
     private void switchFragment(int navItemId, boolean addToBackStack, boolean firstTime) {
         // Если нажали на тот же самый раздел - ничего не делаем
-        Log.e("MainActivity", currentNavItemId + " " + navItemId);
         if ((currentNavItemId == navItemId) && !firstTime) return;
 
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
 
-        Log.i("MainActivity", "switchFragment: targetFragment=" + transaction.toString() + ",");
-        // 1. Скрываем текущий фрагмент (если он есть)
-//        Fragment currentFragment = fragmentMap.get(currentNavItemId);
-//        if (currentFragment != null && currentFragment.isAdded()) {
-//            transaction.hide(currentFragment);
-//        }
-
-        // 2. Получаем или создаем новый фрагмент по ID
-//        Fragment targetFragment = fragmentMap.get(navItemId);
         Fragment targetFragment;
-//        if (targetFragment == null) {
         if (navItemId == R.id.nav_squad) {
             targetFragment = new SquadFragment();
         } else if (navItemId == R.id.nav_notifications) {
@@ -127,26 +110,13 @@ public class MainActivity extends AppCompatActivity {
         } else if (navItemId == R.id.nav_profile) {
             targetFragment = new ProfileFragment();
         } else {
-            return; // Если ID не совпадает ни с одним пунктом - прерываем
+            return;
         }
 
-//            fragmentMap.put(navItemId, targetFragment);
-//        }
-
-        // 3. Проверяем, добавлен ли фрагмент в контейнер
-//        if (!targetFragment.isAdded()) {
-            // Если нет - добавляем
         transaction.replace(R.id.fragment_container, targetFragment, String.valueOf(navItemId));
         Log.i("MainActivity", "switchFragment: targetFragment=" + targetFragment.toString() + ",");
-//        } else {
-//            // Если уже был добавлен (но скрыт) - просто показываем
-//            transaction.show(targetFragment);
-//        }
-
-        // 4. Сохраняем текущий ID
         currentNavItemId = navItemId;
 
-        // 5. Опционально: добавляем в BackStack для кнопки Назад
         if (addToBackStack) {
             transaction.addToBackStack(null);
         }

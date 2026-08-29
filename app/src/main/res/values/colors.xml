@@ -4,4 +4,9 @@
     <color name="white">#FFFFFFFF</color>
     <!-- Transparent blue for unread notifications -->
     <color name="unread_background">#15008AFF</color>
+    <color name="header_background">#03A9F4</color>"
+    <color name="child_tag_chip_bg_alert">#7ABA0000</color>
+    <color name="child_tag_chip_bg_health">#8900FF1A</color>
+    <color name="child_tag_chip_bg_warning">#7EFFEB3B</color>
+    <color name="child_tag_chip_bg_sports">#7C49EBFF</color>
 </resources>

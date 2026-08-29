@@ -9,100 +9,108 @@
     android:background="@android:color/white"
     tools:context=".profile.ProfileFragment">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
-
-        <!-- Header Title -->
-        <TextView
-            android:id="@+id/tv_header"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Профиль"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="@android:color/black"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+        android:orientation="vertical">
 
         <!-- Top Block: Avatar, Name, Role, Squad -->
         <androidx.cardview.widget.CardView
             android:id="@+id/cv_top_block"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardUseCompatPadding="true"
+            android:orientation="vertical"
+            app:cardBackgroundColor="@color/header_background"
+            >
+
+            <!-- Header Title -->
+            <TextView
+                android:id="@+id/tv_header"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Профиль"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:layout_marginTop="14dp"
+                android:layout_marginBottom="14dp"
+                android:layout_gravity="center"/>
+        </androidx.cardview.widget.CardView>
+
+
+        <!-- Personal Data Section -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cv_top_data"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
             app:cardUseCompatPadding="true"
-            app:layout_constraintTop_toBottomOf="@id/tv_header"
+            app:layout_constraintTop_toBottomOf="@id/cv_top_block"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
-
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="16dp">
+                android:padding="16dp"
+                android:orientation="vertical">
 
                 <de.hdodenhof.circleimageview.CircleImageView
                     android:id="@+id/iv_avatar"
                     android:layout_width="80dp"
                     android:layout_height="80dp"
+                    android:layout_marginTop="14dp"
                     android:src="@drawable/ic_person_placeholder"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
                     app:civ_border_width="2dp"
-                    app:civ_border_color="#E0E0E0"/>
+                    app:civ_border_color="#E0E0E0"
+                    android:layout_gravity="center"/>
 
                 <TextView
                     android:id="@+id/tv_name"
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:layout_marginEnd="16dp"
+                    android:layout_marginTop="14dp"
                     android:text="Иван Иванович Иванов"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="@android:color/black"
-                    app:layout_constraintTop_toTopOf="@id/iv_avatar"
-                    app:layout_constraintStart_toEndOf="@id/iv_avatar"
-                    app:layout_constraintEnd_toEndOf="parent"/>
+                    android:layout_gravity="center"/>
 
                 <TextView
                     android:id="@+id/tv_role"
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:layout_marginEnd="16dp"
+                    android:layout_marginTop="14dp"
                     android:text="Вожатый"
                     android:textSize="14sp"
-                    android:textColor="#757575"
-                    app:layout_constraintTop_toBottomOf="@id/tv_name"
-                    app:layout_constraintStart_toEndOf="@id/iv_avatar"
-                    app:layout_constraintEnd_toEndOf="parent"/>
+                    android:textColor="@color/black"
+                    android:layout_gravity="center"/>
 
                 <TextView
                     android:id="@+id/tv_squad"
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:layout_marginEnd="16dp"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="14dp"
                     android:text="Отряд «Капельки»"
                     android:textSize="14sp"
-                    android:textColor="#757575"
-                    app:layout_constraintTop_toBottomOf="@id/tv_role"
-                    app:layout_constraintStart_toEndOf="@id/iv_avatar"
-                    app:layout_constraintEnd_toEndOf="parent"/>
+                    android:textColor="@color/black"
+                    android:layout_gravity="center"/>
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
+            </LinearLayout>
         </androidx.cardview.widget.CardView>
 
         <!-- Personal Data Section -->
         <androidx.cardview.widget.CardView
             android:id="@+id/cv_personal_data"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             app:cardCornerRadius="16dp"
@@ -112,10 +120,11 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="16dp">
+                android:padding="16dp"
+                android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/tv_personal_data_title"
@@ -131,7 +140,7 @@
                 <!-- Name Field -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/til_name"
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:hint="Имя"
@@ -152,7 +161,7 @@
                 <!-- Email Field -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/til_email"
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:hint="Email"
@@ -173,7 +182,7 @@
                 <!-- Phone Field -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/til_phone"
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:layout_marginBottom="16dp"
@@ -192,13 +201,13 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
+            </LinearLayout>
         </androidx.cardview.widget.CardView>
 
         <!-- Save Changes Button -->
         <com.sfedu.campus.profile.DataEditWaitButton
             android:id="@+id/btn_save_changes"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginTop="16dp"
             android:text="Сохранить изменения"
@@ -213,7 +222,7 @@
         <!-- Change Password Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_change_password"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginTop="12dp"
             android:text="Сменить пароль"
@@ -226,7 +235,7 @@
         <!-- Logout Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_logout"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginTop="12dp"
             android:text="Выйти из приложения"
@@ -247,6 +256,7 @@
             android:textSize="12sp"
             android:textColor="#9E9E9E"
             android:textAlignment="center"
+            android:layout_gravity="center"
             app:layout_constraintTop_toBottomOf="@id/btn_logout"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
@@ -274,5 +284,5 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 </androidx.core.widget.NestedScrollView>

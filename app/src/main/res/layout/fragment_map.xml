@@ -3,8 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".map.MapFragment"
-    android:layout_gravity="center">
+    tools:context=".map.MapFragment">
 
     <!-- TODO: Update blank fragment layout -->
     <TextView
@@ -12,5 +11,26 @@
         android:layout_height="match_parent"
         android:text="Map coming soon..."
         android:textAlignment="center"/>
+
+    <LinearLayout
+        android:id="@+id/header_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/header_background"
+        android:orientation="vertical">
+
+        <!-- Page Title -->
+        <TextView
+            android:id="@+id/page_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
+            android:text="@string/maps_page_title"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@color/white" />
+    </LinearLayout>
 
 </FrameLayout>

@@ -3,6 +3,8 @@ package com.sfedu.campus.squad;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,10 +19,12 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipDrawable;
 import com.google.android.material.chip.ChipGroup;
 import com.sfedu.campus.R;
 import com.sfedu.campus.generated.model.Child;
 import com.sfedu.campus.generated.model.ChildTag;
+import com.sfedu.campus.generated.model.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -281,17 +285,38 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
                     if (tag.getInfo() != null && !tag.getInfo().isEmpty()) {
                         Chip chip = new Chip(cgTags.getContext());
                         chip.setText(tag.getInfo());
+                        String tagType = tag.getType().getValue();
+                        int colorInt = getColorInt(tagType);
+//                        chip.setTextColor(ColorStateList.valueOf(colorInt));
+                        chip.setChipBackgroundColor(ColorStateList.valueOf(colorInt));
+                        chip.setChipStrokeColor(ColorStateList.valueOf(colorInt));
+//                        chip.setChipIconResource(R.drawable.child_tag_chip_icon);
+//                        chip.setChipDrawable(ChipDrawable.createFromResource(context, R.xml.child_tag_chip_icon));
                         chip.setClickable(false);
                         chip.setCheckable(false);
                         chip.setChipCornerRadius(16f);
                         chip.setPadding(8, 4, 8, 4);
-                        chip.setTextSize(12f);
+                        chip.setTextSize(14f);
                         cgTags.addView(chip);
                     }
                 }
             } else {
                 cgTags.setVisibility(View.GONE);
             }
+        }
+
+        private int getColorInt(String tagType) {
+            int colorInt = R.color.white;
+            if (tagType.equals("warning")) {
+                colorInt = R.color.child_tag_chip_bg_warning;
+            } else if (tagType.equals("alert")) {
+                colorInt = R.color.child_tag_chip_bg_alert;
+            } else if (tagType.equals("health")) {
+                colorInt = R.color.child_tag_chip_bg_health;
+            } else if (tagType.equals("sports")) {
+                colorInt = R.color.child_tag_chip_bg_sports;
+            }
+            return itemView.getContext().getColor(colorInt);
         }
 
         private void copyToClipboard(String text) {

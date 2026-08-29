@@ -80,13 +80,13 @@
                 android:id="@+id/tv_parent_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:layout_marginStart="8dp"
-                android:text="Родитель: Иван Иванович"
-                android:textSize="14sp"
-                android:textColor="#757575"
+                android:layout_weight="1"
                 android:ellipsize="end"
-                android:maxLines="1"/>
+                android:maxLines="1"
+                android:text="Родитель: Иван Иванович"
+                android:textColor="#757575"
+                android:textSize="14sp" />
 
             <ImageView
                 android:id="@+id/iv_copy_parent_name"

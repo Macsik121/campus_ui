@@ -128,6 +128,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         private void setNotificationIcon(String title) {
             if (title == null) {
                 notificationIcon.setImageResource(R.drawable.notification);
+//                notificationIcon.setHintl
                 return;
             }
 

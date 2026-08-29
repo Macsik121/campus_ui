@@ -22,13 +22,13 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <TextView
-                        android:id="@+id/jesus_saying"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text=""
-                        android:layout_marginTop="15dp"
-                        android:layout_marginBottom="15dp"/>
+<!--                    <TextView-->
+<!--                        android:id="@+id/jesus_saying"-->
+<!--                        android:layout_width="wrap_content"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:text=""-->
+<!--                        android:layout_marginTop="15dp"-->
+<!--                        android:layout_marginBottom="15dp"/>-->
 
                         <!-- Контейнер для Фрагментов (Тело) -->
                         <FrameLayout

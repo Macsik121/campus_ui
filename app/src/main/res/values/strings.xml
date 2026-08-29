@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">CAMPUS</string>
     <!-- TODO: Remove or change this placeholder text -->
+    <!-- Map -->
+    <string name="maps_page_title">Карта</string>
 
     <!-- Notifications -->
     <string name="notification_type_icon">Notification type icon</string>
@@ -10,7 +12,7 @@
     <string name="notification_read_success">Уведомление отмечено как прочитанное</string>
     <string name="notification_read_all_success">Все уведомления отмечены как прочитанные</string>
     <string name="notification_error">Ошибка при обновлении уведомлений</string>
-    <string name="notifications_page_title">Страница - Отображаются уведомления</string>
+    <string name="notifications_page_title">Уведомления</string>
 
     <!-- Squad Log / Journal -->
     <string name="journal_title">Журнал отряда</string>

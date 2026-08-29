@@ -13,39 +13,39 @@
         android:id="@+id/cv_header"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="2dp"
         app:cardUseCompatPadding="true"
+        app:cardElevation="2dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="16dp">
+            android:padding="16dp"
+            android:background="@color/header_background"
+            android:orientation="vertical">
 
             <!-- Title -->
             <TextView
                 android:id="@+id/tv_squad_title"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Мой отряд"
                 android:textSize="22sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/black"
+                android:textColor="@color/white"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"/>
 
             <!-- Child Count -->
             <TextView
                 android:id="@+id/tv_children_count"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Детей: 0"
                 android:textSize="14sp"
-                android:textColor="#757575"
+                android:textColor="@color/white"
                 android:layout_marginStart="8dp"
                 app:layout_constraintBottom_toBottomOf="@id/tv_squad_title"
                 app:layout_constraintStart_toEndOf="@id/tv_squad_title"/>
@@ -53,7 +53,7 @@
             <!-- Search EditText -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/til_search"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:hint="Поиск по имени, тегам, родителям, заметкам"
@@ -62,11 +62,10 @@
                 app:boxCornerRadiusTopEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
                 app:boxCornerRadiusBottomEnd="12dp"
-                app:layout_constraintTop_toBottomOf="@id/tv_squad_title"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:startIconDrawable="@android:drawable/ic_menu_search"
-                app:startIconTint="#757575">
+                app:startIconTint="#FFF"
+                android:textColorHint="@color/white"
+                app:helperTextTextColor="@color/white"
+                app:startIconDrawable="@android:drawable/ic_menu_search">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_search"
@@ -77,7 +76,7 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+        </LinearLayout>
 
     </androidx.cardview.widget.CardView>
 
